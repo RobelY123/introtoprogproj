@@ -1,25 +1,31 @@
-import logo from './logo.svg';
-import './App.css';
+import React from "react";
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import Header from "./util/Header";
+import Footer from "./util/Footer";
+import HomePage from "./pages/Home/HomePage";
+import GradePage from "./pages/Grades/GradePage";
+import LoginPage from "./pages/Login/LoginPage";
+import NotFoundPage from "./pages/NotFound";
+import GradeItem from "./pages/Grades/GradeItem";
+import Grade from "./pages/Grades/Grade";
+import { gradesData } from "./grades";
 
-function App() {
+const App = () => {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Router>
+      <Header />
+      <main style={{ paddingBottom: "100px"}}>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/grades/:gradeId" element={<Grade grades={gradesData} />} />
+          <Route path="/grades" element={<GradePage grades={gradesData} />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      </main>
+      <Footer />
+    </Router>
   );
-}
+};
 
 export default App;
