@@ -29,32 +29,19 @@ const Grade = ({ grades }) => {
   }, [gradeId, grades]);
 
   const recalculateOverallGrade = (assignments, weights) => {
-    const weightSums = Object.keys(weights).reduce(
-      (acc, key) => ({ ...acc, [key]: 0 }),
-      {}
-    );
-    let weightedScoreSum = 0;
-    let totalWeights = 0;
-
-    assignments.forEach((assignment) => {
-      if (
-        assignment.score !== "" &&
-        assignment.outOf > 0 &&
-        weights[assignment.weight]
-      ) {
-        const scoreFraction =
-          (assignment.score / assignment.outOf) * weights[assignment.weight];
-        weightedScoreSum += scoreFraction;
-        weightSums[assignment.weight] += weights[assignment.weight];
-      }
+    const validAssignments = assignments.filter(a => a.score !== '' && a.outOf > 0 && weights[a.weight]);
+  
+    let totalWeightedScore = 0;
+    let totalWeight = 0;
+  
+    validAssignments.forEach(assignment => {
+      const weight = weights[assignment.weight] || 1; // Default weight to 1 if not found
+      const weightedScore = (assignment.score / assignment.outOf) * weight;
+      totalWeightedScore += weightedScore;
+      totalWeight += weight;
     });
-
-    Object.values(weightSums).forEach((sum) => {
-      totalWeights += sum;
-    });
-    return totalWeights > 0
-      ? (weightedScoreSum / totalWeights).toFixed(2)
-      : gradeDetails.grade;
+  
+    return totalWeight > 0 ? ((totalWeightedScore / totalWeight) * 100).toFixed(2) : 'N/A';
   };
 
   const handleAssignmentChange = (index, field, value) => {
@@ -97,72 +84,57 @@ const Grade = ({ grades }) => {
   const weightTypes = Object.keys(gradeDetails.weights);
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" component="h1" gutterBottom>
+    <Box sx={{ p: 3, maxWidth: '100%', width: 'auto', mx: 'auto' }}>
+      <Typography variant="h3" component="h1" gutterBottom sx={{ textAlign: 'center', mb: 4 }}>
         Grade Details - {gradeDetails.subject}
       </Typography>
-      <Paper elevation={3} sx={{ maxWidth: 600, mx: "auto", p: 2 }}>
-        <List component="nav" aria-label="Grade details">
-          <ListItem>
-            <ListItemText
-              primary="Overall Grade"
-              secondary={`${gradeDetails.grade}%`}
+      <Paper elevation={6} sx={{ maxWidth: 800, mx: 'auto', p: 3, backgroundColor: '#f7f7f7' }}>
+        <Typography variant="h5" component="h2" gutterBottom>
+          Overall Grade: {gradeDetails.grade}%
+        </Typography>
+        <Divider sx={{ my: 2 }} />
+        {gradeDetails.assignments.map((assignment, index) => (
+          <Box key={index} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+            <TextField
+              label="Assignment Name"
+              variant="outlined"
+              value={assignment.name}
+              onChange={(e) => handleAssignmentChange(index, 'name', e.target.value)}
+              sx={{ mr: 2, width: '30%' }}
             />
-          </ListItem>
-          <Divider />
-          {gradeDetails.assignments.map((assignment, index) => (
-            <ListItem key={index}>
-              <TextField
-                label="Assignment Name"
-                variant="outlined"
-                value={assignment.name}
-                onChange={(e) =>
-                  handleAssignmentChange(index, "name", e.target.value)
-                }
-                sx={{ mr: 2 }}
-              />
-              <TextField
-                label="Score"
-                type="number"
-                variant="outlined"
-                value={assignment.score}
-                onChange={(e) =>
-                  handleAssignmentChange(index, "score", e.target.value)
-                }
-                sx={{ mr: 2 }}
-              />
-              <TextField
-                label="Out Of"
-                type="number"
-                variant="outlined"
-                value={assignment.outOf}
-                onChange={(e) =>
-                  handleAssignmentChange(index, "outOf", e.target.value)
-                }
-                sx={{ mr: 2 }}
-              />
-              <Select
-                label="Weight Type"
-                value={assignment.weight}
-                onChange={(e) =>
-                  handleAssignmentChange(index, "weight", e.target.value)
-                }
-                sx={{ mr: 2, minWidth: 120 }}
-              >
-                {weightTypes.map((type) => (
-                  <MenuItem key={type} value={type}>
-                    {type}
-                  </MenuItem>
-                ))}
-              </Select>
-            </ListItem>
-          ))}
-          <ListItem>
-            <Button variant="contained" color="primary" onClick={addAssignment}>
-              Add Assignment
-            </Button>
-          </ListItem>
-        </List>
+            <TextField
+              label="Score"
+              type="number"
+              variant="outlined"
+              value={assignment.score}
+              onChange={(e) => handleAssignmentChange(index, 'score', e.target.value)}
+              sx={{ mr: 2, width: '15%' }}
+            />
+            <TextField
+              label="Out Of"
+              type="number"
+              variant="outlined"
+              value={assignment.outOf}
+              onChange={(e) => handleAssignmentChange(index, 'outOf', e.target.value)}
+              sx={{ mr: 2, width: '15%' }}
+            />
+            <Select
+              label="Weight Type"
+              value={assignment.weight}
+              onChange={(e) => handleAssignmentChange(index, 'weight', e.target.value)}
+              sx={{ width: '20%' }}
+            >
+              {weightTypes.map((type) => (
+                <MenuItem key={type} value={type}>
+                  {type}
+                </MenuItem>
+              ))}
+            </Select>
+          </Box>
+        ))}
+        <Button variant="contained" color="primary" onClick={addAssignment} sx={{ mt: 2 }}>
+          Add Assignment
+        </Button>
       </Paper>
     </Box>
   );
