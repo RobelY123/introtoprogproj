@@ -89,7 +89,7 @@ export default function Header() {
             <Button
               color="inherit"
               component={RouterLink}
-              to="#_"
+              to="/gpa"
               sx={{ margin: 1 }}
             >
               GPA
@@ -97,7 +97,7 @@ export default function Header() {
             <Button
               color="inherit"
               component={RouterLink}
-              to="#_"
+              to="/ap"
               sx={{ margin: 1 }}
             >
               AP
