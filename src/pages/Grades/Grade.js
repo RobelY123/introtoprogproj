@@ -19,11 +19,13 @@ const Grade = ({ grades }) => {
   const [gradeDetails, setGradeDetails] = useState(null);
 
   useEffect(() => {
-    const details = grades[parseInt(gradeId, 10)];
-    setGradeDetails({
-      ...details,
-      assignments: details.assignments.map((a) => ({ ...a })),
-    });
+    if (grades && grades.length > 0) {
+      const details = grades[parseInt(gradeId, 10)];
+      setGradeDetails({
+        ...details,
+        assignments: details.assignments.map((a) => ({ ...a })),
+      });
+    }
   }, [gradeId, grades]);
 
   const recalculateOverallGrade = (assignments, weights) => {
@@ -90,9 +92,9 @@ const Grade = ({ grades }) => {
     });
   };
 
-  const weightTypes = Object.keys(gradeDetails.weights);
+  if (!gradeDetails || !gradeDetails.weights) return <div>Loading...</div>;
 
-  if (!gradeDetails) return <div>Loading...</div>;
+  const weightTypes = Object.keys(gradeDetails.weights);
 
   return (
     <Box sx={{ p: 3 }}>
