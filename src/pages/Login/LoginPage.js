@@ -41,33 +41,7 @@ export default function Login() {
     event.preventDefault();
     setLoading(true);
 
-    // const formData = new FormData(event.target);
-    // const data = Object.fromEntries(formData);
 
-    // if (data.username && data.password) {
-    //   // Assuming you have a login API to send the request to
-    //   // Replace 'your-login-api-endpoint' with your actual login API endpoint
-    //   const response = await fetch("your-login-api-endpoint", {
-    //     method: "POST",
-    //     headers: {
-    //       "Content-Type": "application/json",
-    //     },
-    //     body: JSON.stringify(data),
-    //   });
-
-    //   if (response.ok) {
-    //     const result = await response.json();
-    //     console.log(result);
-    //     // Set the user cookie here if needed, or handle the session as per your backend setup
-    //     // Redirect to the grades page
-    //     setLoginSuccess(true);
-    //   } else {
-    //     console.log("Login failed");
-    //     // Handle login failure (e.g., show an error message)
-    //   }
-    // } else {
-    //   console.log("Please fill in all fields");
-    // }
 
     setLoading(false);
   }
@@ -90,7 +64,7 @@ export default function Login() {
         >
           Login
         </Typography>
-        <Box component="form" onSubmit={onSubmit} sx={{ mt: 1, width: "100%" }}>
+        <Box component="form"  sx={{ mt: 1, width: "100%" }}>
           <Typography sx={{ mb: 1, fontWeight: 500 }} variant="subtitle1">
             Username
           </Typography>
@@ -112,14 +86,14 @@ export default function Login() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
-          <CustomButton
-            type="submit"
-            fullWidth
-            variant="contained"
-            color="primary"
-            sx={{ mt: 3, mb: 2 }}
-            disabled={loading}
-          >
+         <CustomButton
+          type="submit"
+          fullWidth
+          variant="contained"
+          color="primary"
+          sx={{ mt: 3, mb: 2 }}
+          disabled={loading}
+        >
             {loading ? "Loading..." : "Login"}
           </CustomButton>
         </Box>

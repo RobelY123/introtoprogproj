@@ -60,14 +60,20 @@ const Grade = ({ grades }) => {
 
     // Calculate the overall weighted score
     let overallScore = 0;
+    let totalWeight = 0;
+
     for (const category in categoryTotals) {
       overallScore +=
         (categoryTotals[category].totalScore /
           categoryTotals[category].totalOutOf) *
         100 *
         categoryTotals[category].weight;
+      totalWeight += categoryTotals[category].weight;
     }
-    // Final calculation
+
+    // Divide the total score by the total weight
+    overallScore = overallScore / totalWeight;
+
     return overallScore.toFixed(2);
   };
   const handleAssignmentChange = (index, field, value) => {
@@ -101,7 +107,7 @@ const Grade = ({ grades }) => {
     const newAssignment = { name: "", score: "", outOf: "", weight: "" };
     setGradeDetails({
       ...gradeDetails,
-      assignments: [...gradeDetails.assignments, newAssignment],
+      assignments: [newAssignment,...gradeDetails.assignments],
     });
   };
 
@@ -117,7 +123,7 @@ const Grade = ({ grades }) => {
         gutterBottom
         sx={{ textAlign: "center", mb: 4 }}
       >
-        Grade Details - {gradeDetails.subject}
+       {gradeDetails.subject}
       </Typography>
       <Paper
         elevation={6}
@@ -127,6 +133,14 @@ const Grade = ({ grades }) => {
           Overall Grade: {gradeDetails.grade}%
         </Typography>
         <Divider sx={{ my: 2 }} />
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={addAssignment}
+          sx={{ mb: 3 }}
+        >
+          Add Assignment
+        </Button>
         {gradeDetails.assignments.map((assignment, index) => (
           <Box
             key={index}
@@ -182,14 +196,6 @@ const Grade = ({ grades }) => {
             </Select>
           </Box>
         ))}
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={addAssignment}
-          sx={{ mt: 2 }}
-        >
-          Add Assignment
-        </Button>
       </Paper>
     </Box>
   );
