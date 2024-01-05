@@ -1,19 +1,19 @@
 import * as React from 'react';
 import { Link as RouterLink } from 'react-router-dom';
-import { Box, Typography, Link } from '@mui/material';
+import { Box, Typography, Link, Divider } from '@mui/material';
 
 export default function Footer() {
   return (
+    <>
+    <Divider/>
     <Box
       component="footer"
       sx={{
-        width: '100%',
         color: 'text.secondary',
         bgcolor: 'background.paper',
-        py: 3,
-        px: 2,
-        position: 'fixed',
-        bottom: 0
+        py:3,
+        bottom: 0,
+        zIndex:2000000000
       }}
     >
       <Box
@@ -30,7 +30,6 @@ export default function Footer() {
           variant="body2"
           component="p"
           sx={{
-            mb: { xs: 2, md: 0 },
             fontSize: '0.875rem',
             textAlign: 'center',
             width: '100%'
@@ -53,6 +52,6 @@ export default function Footer() {
           </Link>
         </Box> */}
       </Box>
-    </Box>
+    </Box></>
   );
 }

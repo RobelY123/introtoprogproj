@@ -4,116 +4,133 @@ import {
   Box,
   Typography,
   Paper,
-  List,
-  ListItem,
   TextField,
   Button,
-  Divider,
-  ListItemText,
   Select,
   MenuItem,
+  Modal,
+  Card,
+  Divider,
 } from "@mui/material";
+import {
+  getAssignmentPointsEarnedDisplay,
+  getAssignmentPointsPossibleDisplay,
+  calculateAssignmentGradeDisplay,
+  calculateAssignmentWeightDisplay,
+  calculatePointsNeededDisplay,
+} from "./gradeCalc.js";
 
 const Grade = ({ grades }) => {
   const { gradeId } = useParams();
   const [gradeDetails, setGradeDetails] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedAssignmentIndex, setSelectedAssignmentIndex] = useState(null);
 
   useEffect(() => {
     if (grades && grades.length > 0) {
       const details = grades[parseInt(gradeId, 10)];
-      setGradeDetails({
-        ...details,
-        assignments: details.assignments.map((a) => ({ ...a })),
-      });
+      setGradeDetails(details);
     }
   }, [gradeId, grades]);
-  const recalculateOverallGrade = (assignments, weights) => {
-    // Object to hold cumulative scores and weights for each category
-    let categoryTotals = {};
 
-    assignments
-      .filter(
-        (a) =>
-          a.score != "" &&
-          a.outOf > 0 &&
-          weights[a.weight] &&
-          a.score &&
-          a.outOf
-      )
-      .forEach((assignment) => {
-        const weightCategory = assignment.weight;
-        const weightFactor = weights[weightCategory] / 100; // Convert weight percentage to a factor
-        // Initialize category in categoryTotals if not present
-        if (!categoryTotals[weightCategory]) {
-          categoryTotals[weightCategory] = {
-            totalScore: 0,
-            totalWeight: 0,
-            totalOutOf: 0,
-            weight: weightFactor,
-          };
-        }
-
-        // Accumulate scores and weights for each category
-        categoryTotals[weightCategory].totalScore += assignment.score;
-        categoryTotals[weightCategory].totalOutOf += assignment.outOf;
-      });
-
-    // Calculate the overall weighted score
-    let overallScore = 0;
-    let totalWeight = 0;
-
-    for (const category in categoryTotals) {
-      overallScore +=
-        (categoryTotals[category].totalScore /
-          categoryTotals[category].totalOutOf) *
-        100 *
-        categoryTotals[category].weight;
-      totalWeight += categoryTotals[category].weight;
-    }
-
-    // Divide the total score by the total weight
-    overallScore = overallScore / totalWeight;
-
-    return overallScore.toFixed(2);
-  };
   const handleAssignmentChange = (index, field, value) => {
-    const updatedAssignments = gradeDetails.assignments.map(
-      (assignment, idx) => {
-        if (idx === index) {
-          return {
-            ...assignment,
-            [field]:
-              field === "score" || field === "outOf"
-                ? parseFloat(value)
-                : value,
-          };
-        }
-        return assignment;
-      }
+    const updatedAssignments = gradeDetails.assignments.map((assignment, idx) =>
+      idx === index ? { ...assignment, [field]: value } : assignment
     );
-
-    const updatedGrade = recalculateOverallGrade(
-      updatedAssignments,
-      gradeDetails.weights
-    );
-    setGradeDetails({
-      ...gradeDetails,
-      assignments: updatedAssignments,
-      grade: updatedGrade,
-    });
+    setGradeDetails({ ...gradeDetails, assignments: updatedAssignments });
   };
 
   const addAssignment = () => {
-    const newAssignment = { name: "", score: "", outOf: "", weight: "" };
+    const newAssignment = {
+      name: "",
+      score: "",
+      outOf: "",
+      weight: "",
+    };
     setGradeDetails({
       ...gradeDetails,
-      assignments: [newAssignment,...gradeDetails.assignments],
+      assignments: [...gradeDetails.assignments, newAssignment],
     });
   };
 
-  if (!gradeDetails || !gradeDetails.weights) return <div>Loading...</div>;
+  const openModal = (index) => {
+    setSelectedAssignmentIndex(index);
+    setModalOpen(true);
+  };
 
-  const weightTypes = Object.keys(gradeDetails.weights);
+  const closeModal = () => {
+    setModalOpen(false);
+  };
+
+  if (!gradeDetails) return <div>Loading...</div>;
+
+  const AssignmentModalContent = () => {
+    const [inputGrade, setInputGrade] = useState(90);
+    if (selectedAssignmentIndex == null) return null;
+    const assignment = gradeDetails.assignments[selectedAssignmentIndex];
+    const pointsEarned = getAssignmentPointsEarnedDisplay(assignment);
+    const pointsPossible = getAssignmentPointsPossibleDisplay(assignment);
+    const grade = calculateAssignmentGradeDisplay(assignment);
+    const weight = calculateAssignmentWeightDisplay(
+      gradeDetails,
+      selectedAssignmentIndex
+    );
+    var pointsNeeded;
+    if (Number.isNaN(parseFloat(inputGrade))) pointsNeeded = "";
+    else
+      pointsNeeded = calculatePointsNeededDisplay(
+        gradeDetails,
+        selectedAssignmentIndex,
+        parseFloat(inputGrade) / 100
+      );
+    return (
+      <Card sx={{ p: 2 }} style={{ width: "500px" }}>
+        <Typography sx={{ p: 1 }} variant="h5">
+          Details
+        </Typography>
+        <Divider sx={{ my: 1 }} />
+        <div style={{ padding: "10px" }}>
+          <Typography>Name: {assignment.name}</Typography>
+          <Typography>Category: {assignment.weight}</Typography>
+          <Typography>
+            Points: {`${pointsEarned} / ${pointsPossible}`}
+          </Typography>
+          <Typography>Grade: {grade}</Typography>
+          <Typography>Weight: {weight}</Typography>
+        </div>
+        <Divider sx={{ my: 1 }} />
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "20px",
+          }}
+        >
+          <div
+            style={{
+              padding: "10px",
+              paddingTop: "6px",
+              display: "flex",
+              alignItems: "center",
+              gap: "20px",
+            }}
+          >
+            <div style={{ display: "flex", gap: "20px", alignItems: "center" }}>
+              <Typography>What score do I need to have a </Typography>
+              <TextField
+                value={inputGrade}
+                onChange={(e) => setInputGrade(e.target.value)}
+                size="small"
+                style={{ width: "80px" }}
+              />
+            </div>
+            <Typography style={{ flex: 0.5 }}> %</Typography>
+          </div>
+          <Typography>{pointsNeeded}</Typography>
+        </div>
+      </Card>
+    );
+  };
 
   return (
     <Box sx={{ p: 3, maxWidth: "100%", width: "auto", mx: "auto" }}>
@@ -123,7 +140,7 @@ const Grade = ({ grades }) => {
         gutterBottom
         sx={{ textAlign: "center", mb: 4 }}
       >
-       {gradeDetails.subject}
+        {gradeDetails.subject}
       </Typography>
       <Paper
         elevation={6}
@@ -132,7 +149,6 @@ const Grade = ({ grades }) => {
         <Typography variant="h5" component="h2" gutterBottom>
           Overall Grade: {gradeDetails.grade}%
         </Typography>
-        <Divider sx={{ my: 2 }} />
         <Button
           variant="contained"
           color="primary"
@@ -142,61 +158,49 @@ const Grade = ({ grades }) => {
           Add Assignment
         </Button>
         {gradeDetails.assignments.map((assignment, index) => (
-          <Box
-            key={index}
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              mb: 2,
-            }}
-          >
+          <div key={index}>
             <TextField
-              label="Assignment Name"
-              variant="outlined"
               value={assignment.name}
               onChange={(e) =>
                 handleAssignmentChange(index, "name", e.target.value)
               }
-              sx={{ mr: 2, width: "30%" }}
             />
             <TextField
-              label="Score"
-              type="number"
-              variant="outlined"
               value={assignment.score}
               onChange={(e) =>
                 handleAssignmentChange(index, "score", e.target.value)
               }
-              sx={{ mr: 2, width: "15%" }}
             />
             <TextField
-              label="Out Of"
-              type="number"
-              variant="outlined"
               value={assignment.outOf}
               onChange={(e) =>
                 handleAssignmentChange(index, "outOf", e.target.value)
               }
-              sx={{ mr: 2, width: "15%" }}
             />
             <Select
-              label="Weight Type"
               value={assignment.weight}
               onChange={(e) =>
                 handleAssignmentChange(index, "weight", e.target.value)
               }
-              sx={{ width: "20%" }}
             >
-              {weightTypes.map((type) => (
-                <MenuItem key={type} value={type}>
-                  {type}
+              {Object.keys(gradeDetails.weights).map((weight) => (
+                <MenuItem key={weight} value={weight}>
+                  {weight}
                 </MenuItem>
               ))}
             </Select>
-          </Box>
+            <Button onClick={() => openModal(index)}>Details</Button>
+          </div>
         ))}
       </Paper>
+
+      <Modal
+        sx={{ display: "flex", justifyContent: "center" }}
+        open={modalOpen}
+        onClose={closeModal}
+      >
+        <AssignmentModalContent />
+      </Modal>
     </Box>
   );
 };

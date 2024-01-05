@@ -1,4 +1,3 @@
-"use client";
 import React, { useState } from "react";
 import {
   TextField,
@@ -7,44 +6,72 @@ import {
   Box,
   Typography,
   Container,
-  styled,
-  FormControl,
-  InputLabel,
-  OutlinedInput,
+  Link,
 } from "@mui/material";
 
-export default function Login() {
+export default function Login({ setGrades, setLoggedIn }) {
   const [loading, setLoading] = useState(false);
-  const CustomButton = styled(Button)({
-    // Increase specificity
-    "&&": {
-      backgroundColor: "#4db6ac", // Example background color
-      color: "white", // Text color
-      "&:hover": {
-        backgroundColor: "#3a9896", // Example hover state color
-      },
-      // Add more styles as needed
-    },
-  });
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [loginSuccess, setLoginSuccess] = useState(false);
-  // ... other states
+  const [usernameError, setUsernameError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [loginError, setLoginError] = useState("");
 
-  React.useEffect(() => {
-    if (loginSuccess) {
-      // Navigate to the grades page
-      window.location.href = "/grades";
-    }
-  }, [loginSuccess]);
-  async function onSubmit(event) {
+  const onSubmit = async (event) => {
     event.preventDefault();
     setLoading(true);
 
+    // Reset errors
+    setUsernameError("");
+    setPasswordError("");
+    setLoginError("");
 
+    // Basic validation
+    if (!username) {
+      setUsernameError("Username is required");
+      setLoading(false);
+      return;
+    }
+    if (!password) {
+      setPasswordError("Password is required");
+      setLoading(false);
+      return;
+    }
 
-    setLoading(false);
-  }
+    // Fetch API call
+    fetch("http://localhost:5000/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    })
+      .catch((error) => {
+        console.error(error);
+        setLoginError(error.message);
+        setLoading(false);
+      })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Login failed. Please check your credentials.");
+        }
+        return response.json();
+      })
+      .then((data) => {
+        // Assume data.token contains the JWT
+        console.log(data);
+        if (data?.Gradebook) {
+          console.log(data);
+          // Store the token in local storage
+          localStorage.setItem("token", data.token);
+          // Update loggedIn state
+          setLoggedIn(true);
+          // Redirect or perform any other actions necessary after successful login
+          localStorage.setItem("grades", JSON.stringify(data.Gradebook));
+        } else {
+          // Handle the absence of a token in the response
+          throw new Error("No token received. Cannot authenticate.");
+        }
+      });
+  };
   return (
     <Container component="main" maxWidth="xs">
       <Paper
@@ -64,38 +91,57 @@ export default function Login() {
         >
           Login
         </Typography>
-        <Box component="form"  sx={{ mt: 1, width: "100%" }}>
-          <Typography sx={{ mb: 1, fontWeight: 500 }} variant="subtitle1">
-            Username
-          </Typography>
-          <TextField
-            fullWidth
-            autoFocus
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-          />
-          <Typography
-            variant="subtitle1"
-            sx={{ mb: 1, mt: 1, fontWeight: 500 }}
-          >
-            Password
-          </Typography>
-          <TextField
-            fullWidth
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-         <CustomButton
-          type="submit"
-          fullWidth
-          variant="contained"
-          color="primary"
-          sx={{ mt: 3, mb: 2 }}
-          disabled={loading}
+        <Box
+          component="form"
+          onSubmit={onSubmit}
+          display="flex"
+          flexDirection="column"
+          alignItems="center"
+          sx={{ mt: 1, width: "100%" }}
         >
+          <div style={{ width: "100%" }}>
+            <Typography sx={{ mb: 1, fontWeight: 500 }} variant="subtitle1">
+              Username
+            </Typography>
+            <TextField
+              fullWidth
+              autoFocus
+              error={!!usernameError}
+              helperText={usernameError}
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+            />
+            <Typography
+              variant="subtitle1"
+              sx={{ mb: 1, mt: 1, fontWeight: 500 }}
+            >
+              Password
+            </Typography>
+            <TextField
+              fullWidth
+              type="password"
+              error={!!passwordError}
+              helperText={passwordError}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <Typography color="error" sx={{ mt: 2 }}>
+              {loginError}
+            </Typography>
+          </div>
+          <Link href="/help" style={{ fontSize: "1.2em" }}>
+            Need Help?
+          </Link>
+          <Button
+            type="submit"
+            fullWidth
+            variant="contained"
+            color="primary"
+            sx={{ mt: 3, mb: 2 }}
+            disabled={loading}
+          >
             {loading ? "Loading..." : "Login"}
-          </CustomButton>
+          </Button>
         </Box>
       </Paper>
     </Container>
