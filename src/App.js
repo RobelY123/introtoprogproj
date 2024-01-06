@@ -92,7 +92,7 @@ const App = () => {
                 path="/login"
                 element={
                   loggedIn ? (
-                    <Navigate to="/grades" />
+                    <Navigate to="/gpa" />
                   ) : (
                     <LoginPage
                       setLoggedIn={setLoggedIn}

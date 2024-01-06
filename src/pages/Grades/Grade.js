@@ -12,15 +12,16 @@ import {
   Card,
   Divider,
   IconButton,
+  Container,
 } from "@mui/material";
 import {
   getAssignmentPointsEarnedDisplay,
   getAssignmentPointsPossibleDisplay,
   calculateAssignmentGradeDisplay,
-  calculateAssignmentWeightDisplay,
-  calculatePointsNeededDisplay,
   calculateGradeDisplay,
+  calculateCategoryDetails,
 } from "./gradeCalc.js";
+import { calculatePointsNeededDisplay } from "./fakeGradeCalc.js";
 import { Info } from "@mui/icons-material";
 
 const Grade = ({ grades }) => {
@@ -31,6 +32,7 @@ const Grade = ({ grades }) => {
   const [grade, setGrade] = useState(
     calculateGradeDisplay(grades.Courses[0].Course[gradeId])
   );
+  const [period, setPeriod] = useState(grades.Courses[0].Course[gradeId]);
   useEffect(() => {
     var data = grades.Courses[0].Course[
       parseInt(gradeId, 10)
@@ -49,63 +51,83 @@ const Grade = ({ grades }) => {
       ...updatedAssignments[index],
       [field]: value,
     };
-    console.log(updatedAssignments[index]);
     console.log(updatedAssignments);
-    // Update the assignments array in the grades data structure
-    updatedGrades.Courses[0].Course[
-      parseInt(gradeId, 10)
-    ].Marks[0].Mark[0].Assignments[0].Assignment = updatedAssignments.map(
-      (assignment) => ({ $: assignment })
-    );
+    if (field != "Measure") {
+      if (field.toLowerCase() == "score") {
+        updatedAssignments[index] = {
+          ...updatedAssignments[index],
+          Points: value.split(" ")[0] + " / " + value.split(" ")[2],
+        };
+      } else if (field.toLowerCase() == "points") {
+        updatedAssignments[index] = {
+          ...updatedAssignments[index],
+          Score: value.split(" ")[0] + " out of " + value.split(" ")[2],
+        };
+      }
+      // Update the assignments array in the grades data structure
+      updatedGrades.Courses[0].Course[
+        parseInt(gradeId, 10)
+      ].Marks[0].Mark[0].Assignments[0].Assignment = updatedAssignments.map(
+        (assignment) => ({ $: assignment })
+      );
 
-    // Find the weight category
-    let assignmentType = updatedAssignments[index].Type;
-    let weightCategories =
-      updatedGrades.Courses[0].Course[parseInt(gradeId, 10)].Marks[0].Mark[0]
-        .GradeCalculationSummary[0].AssignmentGradeCalc;
-
-    // Recalculate the total points and points possible for each weight category
-    weightCategories.forEach((category) => {
-      let totalPoints = 0;
-      let totalPointsPossible = 0;
-
-      updatedAssignments
-        .filter((e) => {
-          let [assignmentEarned, assignmentPossible] =
-            e.Points.split(" / ").map(Number);
-          return assignmentEarned && assignmentPossible;
-        })
-        .forEach((assignment) => {
-          if (assignment.Type === category.$.Type) {
+      // Find the weight category
+      let assignmentType = updatedAssignments[index].Type;
+      let weightCategories =
+        updatedGrades.Courses[0].Course[parseInt(gradeId, 10)].Marks[0].Mark[0]
+          .GradeCalculationSummary[0].AssignmentGradeCalc ||
+        calculateCategoryDetails(
+          updatedGrades.Courses[0].Course[parseInt(gradeId, 10)]
+        );
+      // Recalculate the total points and points possible for each weight category
+      weightCategories.forEach((category) => {
+        let totalPoints = 0;
+        let totalPointsPossible = 0;
+        updatedAssignments
+          .filter((e) => {
             let [assignmentEarned, assignmentPossible] =
-              assignment.Points.split(" / ").map(Number);
-            totalPoints += assignmentEarned;
-            totalPointsPossible += assignmentPossible;
-          }
-        });
-
-      category.$.Points = totalPoints.toFixed(2);
-      category.$.PointsPossible = totalPointsPossible.toFixed(2);
-    });
-    console.log(weightCategories);
-    // Update state with recalculated grade details
+              e.Points.split(" / ").map(Number);
+            return assignmentEarned && assignmentPossible;
+          })
+          .forEach((assignment) => {
+            if (assignment.Type === category?.$?.Type || !category?.$?.Type) {
+              let [assignmentEarned, assignmentPossible] =
+                assignment.Points.split(" / ").map(Number);
+              totalPoints += assignmentEarned;
+              totalPointsPossible += assignmentPossible;
+            }
+          });
+        if (category.$?.Points) {
+          category.$.Points = totalPoints.toFixed(2);
+        } else {
+          category.Points = totalPoints.toFixed(2);
+        }
+        if (category.$?.Points) {
+          category.$.PointsPossible = totalPointsPossible.toFixed(2);
+        } else {
+          category.PointsPossible = totalPointsPossible.toFixed(2);
+        }
+      });
+      // Update state with recalculated grade details
+      // Update state with recalculated grades
+      setGrade(
+        calculateGradeDisplay(
+          updatedGrades.Courses[0].Course[parseInt(gradeId, 10)]
+        )
+      );
+      setPeriod(updatedGrades.Courses[0].Course[parseInt(gradeId, 10)]);
+    }
     setGradeDetails(updatedAssignments);
-
-    // Update state with recalculated grades
-    setGrade(
-      calculateGradeDisplay(
-        updatedGrades.Courses[0].Course[parseInt(gradeId, 10)]
-      )
-    );
   };
   const addAssignment = () => {
     const newAssignment = {
       Measure: "",
       score: "",
-      outOf: "",
+      Points: "0 / 20.0",
       weight: "",
     };
     setGradeDetails([newAssignment, ...gradeDetails]);
+    // handleAssignmentChange(0,'Points',"0 / 20.0")
   };
 
   const openModal = (index) => {
@@ -125,67 +147,80 @@ const Grade = ({ grades }) => {
     const pointsEarned = getAssignmentPointsEarnedDisplay(assignment);
     const pointsPossible = getAssignmentPointsPossibleDisplay(assignment);
     const grade = calculateAssignmentGradeDisplay(assignment);
-    const weight = calculateAssignmentWeightDisplay(
-      gradeDetails,
-      selectedAssignmentIndex
-    );
+    // const weight = calculateAssignmentWeightDisplay(
+    //   gradeDetails,
+    //   selectedAssignmentIndex
+    // );
     var pointsNeeded;
+    console.log(assignment);
     if (Number.isNaN(parseFloat(inputGrade))) pointsNeeded = "";
     else
       pointsNeeded = calculatePointsNeededDisplay(
         gradeDetails,
         selectedAssignmentIndex,
-        parseFloat(inputGrade) / 100
+        parseFloat(inputGrade) / 100,
+        period
       );
     return (
-      <Card sx={{ p: 2 }} style={{ width: "500px" }}>
-        <Typography sx={{ p: 1 }} variant="h5">
-          Details
-        </Typography>
-        <Divider sx={{ my: 1 }} />
-        <div style={{ padding: "10px" }}>
-          <Typography>Name: {assignment.name}</Typography>
-          <Typography>Category: {assignment.weight}</Typography>
-          <Typography>
-            Points: {`${pointsEarned} / ${pointsPossible}`}
+      <Container
+        sx={{
+          display: "flex",
+          width: "100%",
+          height: "100%",
+          mt: 10,
+          justifyContent: "center",
+        }}
+      >
+        <Card sx={{ p: 2 }} style={{ width: "500px", height: "250px" }}>
+          <Typography sx={{ p: 1 }} variant="h5">
+            Details
           </Typography>
-          <Typography>Grade: {grade}</Typography>
-          <Typography>Weight: {weight}</Typography>
-        </div>
-        <Divider sx={{ my: 1 }} />
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "20px",
-          }}
-        >
+          <Divider sx={{ my: 1 }} />
+          <div style={{ padding: "10px" }}>
+            <Typography>Name: {assignment.Measure}</Typography>
+            <Typography>Category: {assignment.Type || "None"}</Typography>
+            <Typography>
+              Points: {`${pointsEarned} / ${pointsPossible}`}
+            </Typography>
+            <Typography>Grade: {grade}</Typography>
+            {/* <Typography>Weight: {weight}</Typography> */}
+          </div>
+          <Divider sx={{ my: 1 }} />
           <div
             style={{
-              padding: "10px",
-              paddingTop: "6px",
               display: "flex",
               alignItems: "center",
               gap: "20px",
             }}
           >
-            <div style={{ display: "flex", gap: "20px", alignItems: "center" }}>
-              <Typography>What score do I need to have a </Typography>
-              <TextField
-                value={inputGrade}
-                onChange={(e) => setInputGrade(e.target.value)}
-                size="small"
-                style={{ width: "80px" }}
-              />
+            <div
+              style={{
+                padding: "10px",
+                paddingTop: "6px",
+                display: "flex",
+                alignItems: "center",
+                gap: "20px",
+              }}
+            >
+              <div
+                style={{ display: "flex", gap: "20px", alignItems: "center" }}
+              >
+                <Typography>What score do I need to have a </Typography>
+                <TextField
+                  value={inputGrade}
+                  onChange={(e) => setInputGrade(e.target.value)}
+                  size="small"
+                  style={{ width: "80px" }}
+                />
+              </div>
+              <Typography style={{ flex: 0.5 }}> %</Typography>
             </div>
-            <Typography style={{ flex: 0.5 }}> %</Typography>
+            <Typography>{pointsNeeded}</Typography>
           </div>
-          <Typography>{pointsNeeded}</Typography>
-        </div>
-      </Card>
+        </Card>
+      </Container>
     );
   };
-
   return (
     <Box sx={{ p: 3, maxWidth: "100%", width: "auto", mx: "auto" }}>
       <Typography
@@ -194,7 +229,7 @@ const Grade = ({ grades }) => {
         gutterBottom
         sx={{ textAlign: "center", mb: 4 }}
       >
-        {gradeDetails.subject}
+        {grades.Courses[0].Course[parseInt(gradeId)].$.Title}
       </Typography>
       <Paper
         elevation={6}
@@ -218,7 +253,7 @@ const Grade = ({ grades }) => {
                 value={assignment.Measure}
                 size="small"
                 onChange={(e) =>
-                  handleAssignmentChange(index, "name", e.target.value)
+                  handleAssignmentChange(index, "Measure", e.target.value)
                 }
                 sx={{ flex: 2 }}
               />
@@ -227,19 +262,22 @@ const Grade = ({ grades }) => {
                 value={
                   assignment.Points?.includes("Possible") || !assignment.Points
                     ? ""
-                    : parseInt(
+                    : parseFloat(
                         assignment.Points?.replace(/,/g, "").split(" ")[0]
                       )
                 }
                 sx={{ flex: 1 }}
                 onChange={(e) => {
-                  handleAssignmentChange(
-                    index,
-                    "Points",
-                    `${e.target.value} / ${
-                      assignment.Points?.replace(/,/g, "").split(" ")[2]
-                    }`
-                  );
+                  const newValue = parseFloat(e.target.value);
+                  if (!isNaN(newValue)) {
+                    handleAssignmentChange(
+                      index,
+                      "Points",
+                      `${newValue.toFixed(2)} / ${
+                        assignment.Points?.replace(/,/g, "").split(" ")[2]
+                      }`
+                    );
+                  }
                 }}
               />
 
@@ -247,42 +285,59 @@ const Grade = ({ grades }) => {
                 value={
                   assignment.Points?.includes("Possible") || !assignment.Points
                     ? ""
-                    : parseInt(
+                    : parseFloat(
                         assignment.Points?.replace(/,/g, "").split(" ")[2]
                       )
                 }
                 sx={{ flex: 1 }}
                 onChange={(e) => {
-                  handleAssignmentChange(
-                    index,
-                    "Points",
-                    `${assignment.Points?.replace(/,/g, "").split(" ")[0]} / ${
-                      e.target.value
-                    }`
-                  );
+                  const newValue = parseFloat(e.target.value);
+                  if (!isNaN(newValue)) {
+                    handleAssignmentChange(
+                      index,
+                      "Points",
+                      `${
+                        assignment.Points?.replace(/,/g, "").split(" ")[0]
+                      } / ${newValue}`
+                    );
+                  }
                 }}
                 size="small"
               />
               <Select
-                value={assignment.Type}
+                value={grades.Courses[0].Course[parseInt(gradeId, 10)]
+                  .Marks[0].Mark[0].GradeCalculationSummary[0]?assignment?.Type ||  grades.Courses[0].Course[
+                    parseInt(gradeId, 10)
+                  ].Marks[0].Mark[0].GradeCalculationSummary[0].AssignmentGradeCalc[0].$.Type:"e"}
                 size="small"
-                sx={{ flex: 1 }}
+                sx={{
+                  flex: 1,
+                  display: grades.Courses[0].Course[parseInt(gradeId, 10)]
+                    .Marks[0].Mark[0].GradeCalculationSummary[0]
+                    ? "inherit"
+                    : "none",
+                }}
                 onChange={(e) =>
                   handleAssignmentChange(index, "Type", e.target.value)
                 }
               >
-                {grades.Courses[0].Course[
-                  parseInt(gradeId, 10)
-                ].Marks[0].Mark[0].GradeCalculationSummary[0].AssignmentGradeCalc.map(
-                  (val) => val.$
-                )
-                  .filter((e) => e.Type != "TOTAL")
-                  .map((val) => val.Type)
-                  .map((weight) => (
-                    <MenuItem key={weight} value={weight}>
-                      {weight}
-                    </MenuItem>
-                  ))}
+                {grades.Courses[0].Course[parseInt(gradeId, 10)].Marks[0]
+                  .Mark[0].GradeCalculationSummary[0] ? (
+                  grades.Courses[0].Course[
+                    parseInt(gradeId, 10)
+                  ].Marks[0].Mark[0].GradeCalculationSummary[0].AssignmentGradeCalc.map(
+                    (val) => val.$
+                  )
+                    .filter((e) => e.Type != "TOTAL")
+                    .map((val) => val.Type)
+                    .map((weight) => (
+                      <MenuItem key={weight} value={weight}>
+                        {weight}
+                      </MenuItem>
+                    ))
+                ) : (
+                  <MenuItem value={3}></MenuItem>
+                )}
               </Select>
               <IconButton
                 sx={{ flex: 0.1, width: "45px" }}
@@ -294,7 +349,6 @@ const Grade = ({ grades }) => {
           ))}
         </div>
       </Paper>
-
       <Modal
         sx={{ display: "flex", justifyContent: "center" }}
         open={modalOpen}

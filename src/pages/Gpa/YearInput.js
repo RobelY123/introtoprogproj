@@ -19,23 +19,45 @@ import {
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
-import { ExpandMore } from "@mui/icons-material";
+import { Delete, ExpandMore } from "@mui/icons-material";
 
 const SemesterInput = ({
   semesterIndex,
   yearIndex,
+  courses, // Receive courses as a prop
   handleCourseChange,
   handleRemoveCourse,
   letterGrade,
+  setYears,
 }) => {
   const matches2 = useMediaQuery("(max-width:550px)");
   const matches = useMediaQuery("(max-width:700px)");
   // State to store courses for each semester
-  const [courses, setCourses] = useState([
-    { name: "Sample Class", grade: "4.0", weight: "Normal" },
-  ]);
-  const [gradeFormat, setGradeFormat] = useState("4.0"); // "4.0" or "100"
+  // const [courses, setCourses] = useState([
+  //   { name: "Sample Class", grade: "4.0", weight: "Normal" },
+  // ]);
+  const [localCourses, setLocalCourses] = useState(courses);
+  const [gradeFormat, setGradeFormat] = useState("4.0");
+  useEffect(() => {
+    // Function to update only the courses for the specific year
+    const updateYearCourses = (newCourses) => {
+      setYears((currentYears) => {
+        // Create a new array to avoid direct state mutation
+        let updatedYears = [...currentYears];
+        console.log(updatedYears[yearIndex]);
+        // Ensure the specific year exists in the array
+        if (updatedYears[yearIndex]) {
+          // Update only the courses for the specified semester in the specific year
+          updatedYears[yearIndex].semesters[semesterIndex].courses = newCourses;
+        }
 
+        return updatedYears;
+      });
+    };
+
+    // Call the function with the updated local courses
+    updateYearCourses(localCourses);
+  }, [localCourses, setYears, yearIndex, semesterIndex]);
   const handleGradeChange = (index, value) => {
     let formattedValue;
 
@@ -54,46 +76,44 @@ const SemesterInput = ({
 
     updateCourse(index, "grade", formattedValue.toString());
   };
-  useEffect(() => {
-    const updatedCourses = courses.map((course) => {
-      const closestLetterGrade = findClosestGrade(course.grade);
-      return { ...course, grade: closestLetterGrade };
-    });
-
-    // Update the courses state
-    setCourses(updatedCourses);
-
-    // Also propagate this change to the parent component
-    handleCourseChange(yearIndex, semesterIndex, updatedCourses);
-  }, [gradeFormat]);
-  const handleLetterGradeChange = (index) => {
-    const numericalGrade = parseFloat(courses[index].grade);
-    const closestLetterGrade = findClosestGrade(numericalGrade);
-    updateCourse(index, "grade", closestLetterGrade);
+  const getGradeDisplayValue = (course) => {
+    return letterGrade ? findClosestGrade(course.grade) : course.grade;
+  };
+  const handleLetterGradeChange = (index, newLetterGrade) => {
+    updateCourse(index, "grade", newLetterGrade.toString());
   };
   const toggleGradeFormat = (event) => {
     const newFormat = event.target.checked ? "100" : "4.0";
-    const conversionFactor = newFormat === "4.0" ? 25 : 4;
-
     const convertedCourses = courses.map((course) => {
       let convertedGrade = course.grade;
       if (convertedGrade !== "") {
-        convertedGrade = parseFloat(convertedGrade) / conversionFactor;
+        // Ensure that grade is a number
+        convertedGrade = parseFloat(convertedGrade);
+
+        if (newFormat === "100") {
+          // Converting from 4.0 scale to 100% scale
+          convertedGrade *= 25;
+        }
+
+        // Rounding to two decimal places
+        convertedGrade = parseFloat(convertedGrade.toFixed(2));
+
         // Limit the grade based on the new format
         convertedGrade =
           newFormat === "4.0"
             ? Math.min(convertedGrade, 4)
             : Math.min(convertedGrade, 100);
       }
+
       return { ...course, grade: convertedGrade.toString() };
     });
 
-    setCourses(convertedCourses);
+    setLocalCourses(convertedCourses);
     setGradeFormat(newFormat);
   };
 
   const addCourse = () => {
-    setCourses([...courses, { name: "", grade: "", weight: "" }]);
+    setLocalCourses([...courses, { name: "", grade: "", weight: "" }]);
   };
   const letterGrades = {
     A: 4.0,
@@ -109,12 +129,10 @@ const SemesterInput = ({
     F: 0.0,
   };
   const updateCourse = (index, field, value) => {
-    const newCourses = [...courses];
-    newCourses[index][field] = value;
-    setCourses(newCourses);
-    handleCourseChange(yearIndex, semesterIndex, newCourses);
-
-    validateInput(newCourses[index], index, field);
+    const updatedCourses = [...localCourses];
+    updatedCourses[index][field] = value;
+    setLocalCourses(updatedCourses);
+    handleCourseChange(yearIndex, semesterIndex, updatedCourses); // Propagate changes to parent component
   };
   const [courseErrors, setCourseErrors] = useState(
     courses.map(() => ({ name: false, grade: false, weight: false }))
@@ -125,19 +143,33 @@ const SemesterInput = ({
       { name: false, grade: false, weight: false },
     ]);
   }, [courses]);
-  const validateInput = (course, index, field) => {
+  const validateInput = (course, index) => {
+    const isNameValid = course.name && course.name.trim() !== "";
+    const isGradeValid =
+      !isNaN(parseFloat(course.grade)) && course.grade.trim() !== "";
+    const isWeightValid = course.weight && course.weight.trim() !== "";
+
     const newCourseErrors = [...courseErrors];
-    // Validate each field of the course
     newCourseErrors[index] = {
-      name: field != "name" ? newCourseErrors[index].name : !course.name,
-      grade:
-        field != "grade"
-          ? newCourseErrors[index].grade
-          : !course.grade || isNaN(parseFloat(course.grade)),
-      weight: !course.weight,
+      name: !isNameValid,
+      grade: !isGradeValid,
+      weight: !isWeightValid,
     };
 
     setCourseErrors(newCourseErrors);
+  };
+  const letterGradesToNumeric = {
+    A: "4.0",
+    "A-": 3.7,
+    "B+": 3.3,
+    B: "3.0",
+    "B-": 2.7,
+    "C+": 2.3,
+    C: "2.0",
+    "C-": 1.7,
+    "D+": 1.3,
+    D: 1.0,
+    F: 0.0,
   };
   const gradeMapping = [
     { letter: "A", min: 4.0 },
@@ -152,6 +184,20 @@ const SemesterInput = ({
     { letter: "D", min: 1.0 },
     { letter: "F", min: 0.0 },
   ];
+  const getNumericGradeForSelect = (letterGrade) => {
+    return letterGradesToNumeric[letterGrade] || letterGrade;
+  };
+  const findClosestLetterGrade = (numericGrade) => {
+    const grades = Object.entries(letterGradesToNumeric).sort(
+      (a, b) => b[1] - a[1]
+    );
+    for (const [letter, grade] of grades) {
+      if (numericGrade >= grade) {
+        return letter;
+      }
+    }
+    return "F"; // Default to F if no match is found
+  };
   const findClosestGrade = (numericalGrade) => {
     // Start with the lowest grade by default
     let closestGrade = gradeMapping[gradeMapping.length - 1].letter;
@@ -210,7 +256,7 @@ const SemesterInput = ({
           />
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-          {courses.map((course, index) => (
+          {localCourses.map((course, index) => (
             <>
               <div
                 key={index}
@@ -242,17 +288,20 @@ const SemesterInput = ({
                         : ""
                     }
                     sx={{ flex: 0.7 }}
-                    value={course.grade || "4"} // Directly use the course.grade value
+                    value={ letterGradesToNumeric[
+                      findClosestLetterGrade(course.grade)
+                    ].toString() === "0" ? "0.0" :  letterGradesToNumeric[
+                      findClosestLetterGrade(course.grade)
+                    ].toString()}
                     onChange={(e) =>
                       handleLetterGradeChange(index, e.target.value)
                     }
-                    defaultValue={"4"}
                     // ... other props
                   >
                     {Object.entries(letterGrades).map(([label, value]) => (
                       <MenuItem
                         key={label}
-                        value={parseFloat(value.toString()).toFixed(1)}
+                        value={parseFloat(value).toFixed(1)}
                       >
                         {label}
                       </MenuItem>
@@ -338,10 +387,14 @@ const SemesterInput = ({
 
 const YearInput = ({
   yearIndex,
+  semesters, // Now receive semesters data from props
   handleCourseChange,
   handleRemoveCourse,
   expandedYears,
   setExpandedYears,
+  years,
+  setYears,removeYear
+  // ... other props ...
 }) => {
   const matches = useMediaQuery("(max-width:1200px)");
   const handleAccordionChange = (panel) => (event, isExpanded) => {
@@ -352,6 +405,9 @@ const YearInput = ({
         return prev.filter((p) => p !== panel);
       }
     });
+  };
+  const handleRemoveYear = () => {
+    removeYear(yearIndex);
   };
   const [letter, setLetter] = useState(false);
   return (
@@ -385,6 +441,9 @@ const YearInput = ({
             />
             <Typography sx={{ fontSize: "0.8em" }}>Letter Grade</Typography>
           </div>
+          <IconButton onClick={handleRemoveYear}>
+            <Delete /> {/* Assuming DeleteIcon is imported */}
+          </IconButton>
         </div>
       </AccordionSummary>
       <AccordionDetails>
@@ -397,20 +456,20 @@ const YearInput = ({
               width: "100%",
             }}
           >
-            <SemesterInput
-              semesterIndex={0}
-              yearIndex={yearIndex}
-              handleCourseChange={handleCourseChange}
-              handleRemoveCourse={handleRemoveCourse}
-              letterGrade={letter}
-            />
-            <SemesterInput
-              semesterIndex={1}
-              yearIndex={yearIndex}
-              handleCourseChange={handleCourseChange}
-              handleRemoveCourse={handleRemoveCourse}
-              letterGrade={letter}
-            />
+            {semesters.map((semester, semesterIndex) => (
+              <SemesterInput
+                key={semesterIndex}
+                semesterIndex={semesterIndex}
+                yearIndex={yearIndex}
+                courses={semester.courses} // Pass the courses data to the SemesterInput
+                handleCourseChange={handleCourseChange}
+                handleRemoveCourse={handleRemoveCourse}
+                letterGrade={letter}
+                setYears={setYears}
+                years={years}
+                // ... other props you need to pass down ...
+              />
+            ))}
           </div>
         </Container>
       </AccordionDetails>

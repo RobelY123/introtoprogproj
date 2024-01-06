@@ -1,31 +1,41 @@
 import React, { useRef, useState } from "react";
 import YearInput from "./YearInput";
 import { Button, Typography } from "@mui/material";
+import { data } from "./gpa";
 
 const GPACalculator = () => {
-  const [years, setYears] = useState([]);
+  const [years, setYears] = useState(data.years);
   const [expandedYears, setExpandedYears] = useState([]);
   const [gpaMessage, setGpaMessage] = useState("");
   const bottomRef = useRef(null);
   const addYear = () => {
-    setYears([
-      ...years,
-      {
-        semesters: [
-          {
-            courses: [{ name: "Sample Class", grade: "4.0", weight: "Normal" }],
-          },
-          {
-            courses: [{ name: "Sample Class", grade: "4.0", weight: "Normal" }],
-          },
-        ],
-      },
-    ]);
+    const newYearIndex = years.length; // If no years, index will be 0; otherwise, it will be the next sequential number.
+  
+    const newYear = {
+      yearIndex: newYearIndex,
+      semesters: [
+        {
+          courses: [{ name: "Sample Class", grade: "4.0", weight: "Normal" }],
+        },
+        {
+          courses: [{ name: "Sample Class", grade: "4.0", weight: "Normal" }],
+        },
+      ],
+    };
+  
+    setYears([...years, newYear]);
   };
   const removeYear = (yearIndex) => {
-    const newYears = [...years];
-    newYears.splice(yearIndex, 1);
-    setYears(newYears);
+    // Remove the year at the given yearIndex
+    const newYears = years.filter((_, index) => index !== yearIndex);
+  
+    // Update yearIndex for all subsequent years
+    const updatedYears = newYears.map((year, index) => ({
+      ...year,
+      yearIndex: index, // Update the yearIndex to match the new position
+    }));
+  
+    setYears(updatedYears);
   };
 
   const handleCourseChange = (yearIndex, semesterIndex, newCourses) => {
@@ -59,11 +69,12 @@ const GPACalculator = () => {
     let totalUnweightedGPA = 0;
     let totalWeightedGPA = 0;
     let totalYears = 0;
-
+console.log(years)
     years.forEach((year) => {
       let yearUnweightedGPA = 0;
       let yearWeightedGPA = 0;
       let totalSemesters = 0;
+      console.log(year)
       year.semesters.forEach((semester) => {
         let semesterPointsUnweighted = 0;
         let semesterPointsWeighted = 0;
@@ -122,11 +133,15 @@ const GPACalculator = () => {
       {years.map((year, index) => (
         <YearInput
           key={index}
-          yearIndex={index}
+          yearIndex={year.yearIndex}
+          semesters={year.semesters} // Pass the semesters data to the YearInput
           handleCourseChange={handleCourseChange}
           handleRemoveCourse={handleRemoveCourse}
           expandedYears={expandedYears}
           setExpandedYears={setExpandedYears}
+          setYears={setYears}
+          years={years}
+          removeYear={removeYear}
         />
       ))}
       <div ref={bottomRef}>

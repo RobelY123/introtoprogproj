@@ -43,112 +43,80 @@ function calculateGradeDisplay(period) {
  * return as decimal (0.912 instead of 91.2)
  */
 function calculateGrade(period) {
-  let categoriesWithDetails = calculateCategoryDetails(period);
-  console.log(categoriesWithDetails)
   console.log(period)
-  let weightOfValidCategories = 0;
-  for (let category of categoriesWithDetails) {
-    if (category.grade != CATEGORY_NOT_GRADED_STR)
-      weightOfValidCategories +=
-        category.name == "All"
-          ? 100
-          : parseInt(category.Weight?.substring(0, category.Weight.length - 2));
-  }
+  let categoriesWithDetails = calculateCategoryDetails(period);
 
-  if (weightOfValidCategories == 0)
-    return PERIOD_GRADE_IF_NO_GRADED_ASSIGNMENTS;
-
-  let weightScale = 1 / weightOfValidCategories;
-  let grade = 0;
+  let totalWeight = 0;
+  let weightedGradeSum = 0;
+  
+  // Calculate the sum of the weighted grades and the total weight
   for (let category of categoriesWithDetails) {
-    if (category.grade != CATEGORY_NOT_GRADED_STR && category) {
-      grade +=
-        category.grade *
-        (category.name == "All"
-          ? 100
-          : parseInt(
-              category.Weight?.substring(0, category.Weight.length - 2)
-            ));
+    if (category.grade !== CATEGORY_NOT_GRADED_STR) {
+      let weight = category.name === "All" ? 1 : parseFloat(category.Weight) / 100;
+      totalWeight += weight;
+      weightedGradeSum += weight * category.grade;
     }
   }
-  grade *= weightScale;
-  return grade;
+
+  if (totalWeight === 0) {
+    return PERIOD_GRADE_IF_NO_GRADED_ASSIGNMENTS;
+  }
+
+  // Calculate final grade based on the weighted sum of grades
+  return weightedGradeSum / totalWeight;
 }
 
-/**
- * get category details: name, pointsEarned, pointsPossible, weight (as decimal), grade (as decimal)
- * grade for categories with 0 points possible will be the not graded string
- *     make sure this matches with other code
- *     (it doesn't need to match with assignment not graded string)
- * this will not mutate period, it will clone anything neccessary
- */
 function calculateCategoryDetails(period) {
-  console.log(period);
   var categories = _.cloneDeep(
     period.Marks[0].Mark[0].GradeCalculationSummary[0]?.AssignmentGradeCalc?.map(
       (e) => e.$
     )
-  )?.filter((e) => e?.Type != "TOTAL");
-  // Check if categories is undefined or empty
+  )?.filter((e) => e?.Type !== "TOTAL");
+  
   if (!categories || categories.length === 0) {
-    categories = [{ name: "All", pointsEarned: 0, pointsPossible: 0 }];
+    categories = [{ name: "All", pointsEarned: 0, pointsPossible: 0, Weight: "100%" }];
   } else {
-    // Initialize points for each category
     for (let category of categories) {
       category.pointsEarned = 0;
       category.pointsPossible = 0;
     }
   }
 
-  for (let assignment of period.Marks[0].Mark[0].Assignments[0].Assignment.filter(
-    (e) => e.$.Points.includes("/")
-  )) {
-    if (categories[0]?.name == "All") {
-      categories[0].pointsEarned += parseFloat(
-        assignment.$.Score.split(" ")[0]
-      );
-      categories[0].pointsPossible += parseFloat(
-        assignment.$.Score.split(" ")[3]
-      );
+  period.Marks[0].Mark[0].Assignments[0].Assignment.forEach(assignment => {
+    let scoreComponents = assignment.$.Score.split(" ");
+    let pointsEarned = parseFloat(scoreComponents[0]);
+    let pointsPossible = parseFloat(scoreComponents[3]);
+
+    // Check for invalid or not graded assignments
+    if (isNaN(pointsEarned) || isNaN(pointsPossible)) {
+      return; // Skip this iteration
+    }
+
+    if (categories.length === 1 && categories[0].name === "All") {
+      categories[0].pointsEarned += pointsEarned;
+      categories[0].pointsPossible += pointsPossible;
     } else {
-      if (
-        parseFloat(assignment.$.Score.split(" ")[0]) ==
-          NOT_GRADED_POINTS_EARNED_STR ||
-        parseFloat(assignment.$.Score.split(" ")[3]) ==
-          NOT_GRADED_POINTS_POSSIBLE_STR
-      )
-        continue;
-      else {
-        let category = categories.find((i) => i.name == assignment.weight);
-        if (!category) {
-          // Handle the case where the assignment's category is not found
-          category = categories[0]; // Default to the first/only category
-        }
-        category.pointsEarned += parseFloat(assignment.$.Score.split(" ")[0]);
-        category.pointsPossible += parseFloat(assignment.$.Score.split(" ")[3]);
+      let category = categories.find(c => c.name === assignment.$.Category);
+      if (category) {
+        category.pointsEarned += pointsEarned;
+        category.pointsPossible += pointsPossible;
       }
     }
-  }
-  for (let category of categories) {
-    if (!category.pointsEarned || !category.pointsPossible) {
-      category.pointsEarned = parseFloat(category?.Points);
-      category.pointsPossible = parseFloat(category?.PointsPossible);
-    } else if (!category.Points || !category.PointsPossible) {
-      category.Points = category?.pointsEarned + "";
-      category.PointsPossible = category?.pointsPossible + "";
-    }
-    // Replace commas and convert to numbers
-    let points = parseFloat(category.Points?.replace(/,/g, "")) || 0;
-    let pointsPossible =
-      parseFloat(category.PointsPossible?.replace(/,/g, "")) || 0;
-    // Check for division by zero case
-    if (pointsPossible === 0) {
-      // Assign a default value or a specific indication for 0/0 case
-      category.grade = CATEGORY_NOT_GRADED_STR; // Assuming CATEGORY_NOT_GRADED_STR is a constant indicating ungraded category
+  });
+
+  categories.forEach(category => {
+    // Check if pointsPossible is zero or undefined
+    if (category.pointsPossible === 0 || isNaN(category.pointsPossible)) {
+      category.grade = CATEGORY_NOT_GRADED_STR;
     } else {
-      category.grade = points / pointsPossible;
+      category.grade = category.pointsEarned / category.pointsPossible;
     }
-  }
+    // Parse Weight to a decimal
+    category.Weight = category.Weight?.endsWith("%")
+      ? parseFloat(category.Weight) / 100
+      : parseFloat(category.Weight);
+  });
+
   return categories;
 }
 function calculateCategoryDetailsDisplay(period) {
@@ -192,10 +160,6 @@ function calculateAssignmentWeight(period, assignmentInd, period2) {
   // Calculate the weight of the assignment based on the change in grade
   let weight = gradeIfFullScore - gradeIf0;
 
-  // Debugging output
-  console.log(`Grade if score is 0: ${gradeIf0}`);
-  console.log(`Grade if full score: ${gradeIfFullScore}`);
-  console.log(`Calculated weight: ${weight}`);
 
   // If there is no change in grade, there might be a problem with the grade calculation logic
   if (weight === 0) {
