@@ -56,18 +56,14 @@ function calculateGrade(period) {
 
   let weightScale = 1 / weightOfValidCategories;
   let grade = 0;
-  console.log(categoriesWithDetails);
   for (let category of categoriesWithDetails) {
     if (category.grade != CATEGORY_NOT_GRADED_STR && category) {
-      console.log(category);
       grade +=
         category.grade *
         parseInt(category.Weight?.substring(0, category.Weight.length - 2));
     }
   }
-  console.log(grade);
   grade *= weightScale;
-  console.log(grade);
   return grade;
 }
 
@@ -84,8 +80,6 @@ function calculateCategoryDetails(period) {
       (e) => e.$
     )
   )?.filter((e) => e?.Type != "TOTAL");
-  console.log(period);
-  console.log(categories);
   // Check if categories is undefined or empty
   if (!categories || categories.length === 0) {
     categories = [{ name: "All", pointsEarned: 0, pointsPossible: 0 }];
@@ -131,7 +125,6 @@ function calculateCategoryDetails(period) {
     } else {
       category.grade = points / pointsPossible;
     }
-    console.log(category.grade);
   }
   return categories;
 }

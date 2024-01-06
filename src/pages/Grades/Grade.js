@@ -11,6 +11,7 @@ import {
   Modal,
   Card,
   Divider,
+  IconButton,
 } from "@mui/material";
 import {
   getAssignmentPointsEarnedDisplay,
@@ -18,39 +19,102 @@ import {
   calculateAssignmentGradeDisplay,
   calculateAssignmentWeightDisplay,
   calculatePointsNeededDisplay,
+  calculateGradeDisplay,
 } from "./gradeCalc.js";
+import { Info } from "@mui/icons-material";
 
 const Grade = ({ grades }) => {
   const { gradeId } = useParams();
   const [gradeDetails, setGradeDetails] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedAssignmentIndex, setSelectedAssignmentIndex] = useState(null);
-
+  const [grade, setGrade] = useState(
+    calculateGradeDisplay(grades.Courses[0].Course[gradeId])
+  );
   useEffect(() => {
-    if (grades && grades.length > 0) {
-      const details = grades[parseInt(gradeId, 10)];
-      setGradeDetails(details);
+    var data = grades.Courses[0].Course[
+      parseInt(gradeId, 10)
+    ].Marks[0].Mark[0].Assignments[0].Assignment.map((e) => e.$);
+    if (data && data.length > 0) {
+      setGradeDetails(data);
     }
   }, [gradeId, grades]);
 
   const handleAssignmentChange = (index, field, value) => {
-    const updatedAssignments = gradeDetails.assignments.map((assignment, idx) =>
-      idx === index ? { ...assignment, [field]: value } : assignment
-    );
-    setGradeDetails({ ...gradeDetails, assignments: updatedAssignments });
-  };
+    let updatedAssignments = [...gradeDetails];
+    let updatedGrades = JSON.parse(JSON.stringify(grades)); // Deep copy grades
 
+    // Update the assignment's Points or Score field
+    updatedAssignments[index] = {
+      ...updatedAssignments[index],
+      [field]: value,
+    };
+    console.log(updatedAssignments[index]);
+    console.log(updatedAssignments);
+    // Update the assignments array in the grades data structure
+    updatedGrades.Courses[0].Course[
+      parseInt(gradeId, 10)
+    ].Marks[0].Mark[0].Assignments[0].Assignment = updatedAssignments.map(
+      (assignment) => ({ $: assignment })
+    );
+
+    // Find the weight category
+    let assignmentType = updatedAssignments[index].Type;
+    let weightCategories =
+      updatedGrades.Courses[0].Course[parseInt(gradeId, 10)].Marks[0].Mark[0]
+        .GradeCalculationSummary[0].AssignmentGradeCalc;
+
+    // Recalculate the total points and points possible for each weight category
+    weightCategories.forEach((category) => {
+      let totalPoints = 0;
+      let totalPointsPossible = 0;
+
+      updatedAssignments
+        .filter((e) => {
+          let [assignmentEarned, assignmentPossible] =
+            e.Points.split(" / ").map(Number);
+          return assignmentEarned && assignmentPossible;
+        })
+        .forEach((assignment) => {
+          if (assignment.Type === category.$.Type) {
+            let [assignmentEarned, assignmentPossible] =
+              assignment.Points.split(" / ").map(Number);
+            totalPoints += assignmentEarned;
+            totalPointsPossible += assignmentPossible;
+            console.log(
+              `Assignment: ${assignment.Measure}, Earned: ${assignmentEarned}, Possible: ${assignmentPossible}`
+            );
+          }
+        });
+
+      console.log(
+        `Category Before: ${category.$.Type}, Points: ${category.$.Points}, PointsPossible: ${category.$.PointsPossible}`
+      );
+      category.$.Points = totalPoints.toFixed(2);
+      category.$.PointsPossible = totalPointsPossible.toFixed(2);
+      console.log(
+        `Category After: ${category.$.Type}, Points: ${category.$.Points}, PointsPossible: ${category.$.PointsPossible}`
+      );
+    });
+    console.log(weightCategories);
+    // Update state with recalculated grade details
+    setGradeDetails(updatedAssignments);
+
+    // Update state with recalculated grades
+    setGrade(
+      calculateGradeDisplay(
+        updatedGrades.Courses[0].Course[parseInt(gradeId, 10)]
+      )
+    );
+  };
   const addAssignment = () => {
     const newAssignment = {
-      name: "",
+      Measure: "",
       score: "",
       outOf: "",
       weight: "",
     };
-    setGradeDetails({
-      ...gradeDetails,
-      assignments: [...gradeDetails.assignments, newAssignment],
-    });
+    setGradeDetails([newAssignment, ...gradeDetails]);
   };
 
   const openModal = (index) => {
@@ -63,11 +127,10 @@ const Grade = ({ grades }) => {
   };
 
   if (!gradeDetails) return <div>Loading...</div>;
-
   const AssignmentModalContent = () => {
     const [inputGrade, setInputGrade] = useState(90);
     if (selectedAssignmentIndex == null) return null;
-    const assignment = gradeDetails.assignments[selectedAssignmentIndex];
+    const assignment = gradeDetails[selectedAssignmentIndex];
     const pointsEarned = getAssignmentPointsEarnedDisplay(assignment);
     const pointsPossible = getAssignmentPointsPossibleDisplay(assignment);
     const grade = calculateAssignmentGradeDisplay(assignment);
@@ -147,7 +210,7 @@ const Grade = ({ grades }) => {
         sx={{ maxWidth: 800, mx: "auto", p: 3, backgroundColor: "#f7f7f7" }}
       >
         <Typography variant="h5" component="h2" gutterBottom>
-          Overall Grade: {gradeDetails.grade}%
+          Overall Grade: {grade}%
         </Typography>
         <Button
           variant="contained"
@@ -157,41 +220,88 @@ const Grade = ({ grades }) => {
         >
           Add Assignment
         </Button>
-        {gradeDetails.assignments.map((assignment, index) => (
-          <div key={index}>
-            <TextField
-              value={assignment.name}
-              onChange={(e) =>
-                handleAssignmentChange(index, "name", e.target.value)
-              }
-            />
-            <TextField
-              value={assignment.score}
-              onChange={(e) =>
-                handleAssignmentChange(index, "score", e.target.value)
-              }
-            />
-            <TextField
-              value={assignment.outOf}
-              onChange={(e) =>
-                handleAssignmentChange(index, "outOf", e.target.value)
-              }
-            />
-            <Select
-              value={assignment.weight}
-              onChange={(e) =>
-                handleAssignmentChange(index, "weight", e.target.value)
-              }
-            >
-              {Object.keys(gradeDetails.weights).map((weight) => (
-                <MenuItem key={weight} value={weight}>
-                  {weight}
-                </MenuItem>
-              ))}
-            </Select>
-            <Button onClick={() => openModal(index)}>Details</Button>
-          </div>
-        ))}
+        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+          {gradeDetails.map((assignment, index) => (
+            <div key={index} style={{ display: "flex", gap: "20px" }}>
+              <TextField
+                value={assignment.Measure}
+                size="small"
+                onChange={(e) =>
+                  handleAssignmentChange(index, "name", e.target.value)
+                }
+                sx={{ flex: 2 }}
+              />
+              <TextField
+                size="small"
+                value={
+                  assignment.Points?.includes("Possible") || !assignment.Points
+                    ? ""
+                    : parseInt(
+                        assignment.Points?.replace(/,/g, "").split(" ")[0]
+                      )
+                }
+                sx={{ flex: 1 }}
+                onChange={(e) => {
+                  handleAssignmentChange(
+                    index,
+                    "Points",
+                    `${e.target.value} / ${
+                      assignment.Points?.replace(/,/g, "").split(" ")[2]
+                    }`
+                  );
+                }}
+              />
+
+              <TextField
+                value={
+                  assignment.Points?.includes("Possible") || !assignment.Points
+                    ? ""
+                    : parseInt(
+                        assignment.Points?.replace(/,/g, "").split(" ")[2]
+                      )
+                }
+                sx={{ flex: 1 }}
+                onChange={(e) => {
+                  handleAssignmentChange(
+                    index,
+                    "Points",
+                    `${assignment.Points?.replace(/,/g, "").split(" ")[0]} / ${
+                      e.target.value
+                    }`
+                  );
+                }}
+                size="small"
+              />
+              <Select
+                value={assignment.Type}
+                size="small"
+                sx={{ flex: 1 }}
+                onChange={(e) =>
+                  handleAssignmentChange(index, "Type", e.target.value)
+                }
+              >
+                {grades.Courses[0].Course[
+                  parseInt(gradeId, 10)
+                ].Marks[0].Mark[0].GradeCalculationSummary[0].AssignmentGradeCalc.map(
+                  (val) => val.$
+                )
+                  .filter((e) => e.Type != "TOTAL")
+                  .map((val) => val.Type)
+                  .map((weight) => (
+                    <MenuItem key={weight} value={weight}>
+                      {weight}
+                    </MenuItem>
+                  ))}
+              </Select>
+              <IconButton
+                sx={{ flex: 0.1, width: "45px" }}
+                onClick={() => openModal(index)}
+              >
+                <Info />
+              </IconButton>
+            </div>
+          ))}
+        </div>
       </Paper>
 
       <Modal

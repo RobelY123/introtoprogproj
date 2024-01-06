@@ -57,7 +57,7 @@ export default function Header({ loggedIn, logout }) {
   );
 
   return (
-    <AppBar position="sticky" color="inherit" sx={{ boxShadow: 1 }}>
+    <AppBar position="sticky" color="inherit" sx={{ boxShadow: 1,background:'' }}>
       <Toolbar>
         {/* <Typography
           variant="h6"
@@ -67,6 +67,7 @@ export default function Header({ loggedIn, logout }) {
         >
           Simeo
         </Typography> */}
+        <a href="/">
         <img
           component={RouterLink}
           href="/"
@@ -79,7 +80,7 @@ export default function Header({ loggedIn, logout }) {
           }}
           src={logoText}
         />
-
+</a>
         <div
           style={{ width: "100%", display: "flex", justifyContent: "flex-end" }}
         >

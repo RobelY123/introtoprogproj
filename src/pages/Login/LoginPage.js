@@ -51,7 +51,9 @@ export default function Login({ setGrades, setLoggedIn }) {
       })
       .then((response) => {
         if (!response.ok) {
-          throw new Error("Login failed. Please check your credentials.");
+          console.error("Login failed. Please check your credentials.");
+          setLoginError("Login failed. Please check your credentials.");
+          setLoading(false);
         }
         return response.json();
       })

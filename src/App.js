@@ -72,7 +72,7 @@ const App = () => {
                 path="/grades/:gradeId"
                 element={
                   loggedIn ? (
-                    <Grade grades={gradesData} />
+                    <Grade grades={grades} />
                   ) : (
                     <Navigate to="/login" />
                   )
@@ -113,14 +113,14 @@ const App = () => {
         </Box>
       </Box>
       <Footer />
-      <Fab
+      {/* <Fab
         color="primary"
         aria-label="chat"
         style={{ position: "fixed", bottom: 20, right: 20 }}
         onClick={() => setChatOpen(true)}
       >
         <ChatBubbleIcon />
-      </Fab>
+      </Fab> */}
       <Modal open={chatOpen} onClose={() => setChatOpen(false)}>
         <Chatbot />
       </Modal>

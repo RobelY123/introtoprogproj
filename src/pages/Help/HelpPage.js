@@ -16,19 +16,37 @@ const faqs = [
     question: "How does the login work?",
     answer:
       "The login connects to StudentVue and fetches your grades securely.",
+  },{
+    question: "Can I add my own assignments to courses?",
+    answer:
+      "Yes, you can add your own assignments to courses. This feature allows you to keep track of all your coursework in one place.",
   },
   {
-    question: "What can the chatbot do?",
+    question: "Do course grades take into account category weighting?",
     answer:
-      "The chatbot can assist you with navigation, provide information about your grades, and answer common questions.",
+      "Course grades do consider category weighting. You can customize the weighting for each category with either a normal weight or an Ap weight.",
   },
-  // Add more FAQs as needed
+  {
+    question: "What's the difference between weighted and unweighted GPA?",
+    answer:
+      "Weighted GPA takes into account the difficulty level of your courses, giving higher value to honors and AP classes. Unweighted GPA considers all classes equally, regardless of difficulty.",
+  },
+  {
+    question: "Can I see both unweighted and weighted GPA?",
+    answer:
+      "Yes, our system provides the option to view both unweighted and weighted GPA so you can track your academic performance comprehensively.",
+  },
+  {
+    question: "How do I change the grade of past assignments?",
+    answer:
+      "To change the grade of past assignments, go to the assignment list, select the assignment you want to update, and edit the grade directly.",
+  },
 ];
 
 const HelpPage = () => {
   const handleContactSupport = () => {
     window.open(
-      `mailto:robelyayeh123@gmail.com?subject=Support Request&body=Please describe your issue or question:`
+      `mailto:robelyayeh123@gmail.com?subject=Help`
     );
   };
   return (
