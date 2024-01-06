@@ -45,10 +45,12 @@ function calculateGrade(period) {
   let categoriesWithDetails = calculateCategoryDetails(period);
   let weightOfValidCategories = 0;
   for (let category of categoriesWithDetails) {
+    console.log(category);
     if (category.grade != CATEGORY_NOT_GRADED_STR)
-      weightOfValidCategories += parseInt(
-        category.Weight?.substring(0, category.Weight.length - 2)
-      );
+      weightOfValidCategories +=
+        category.name == "All"
+          ? 100
+          : parseInt(category.Weight?.substring(0, category.Weight.length - 2));
   }
 
   if (weightOfValidCategories == 0)
@@ -60,7 +62,11 @@ function calculateGrade(period) {
     if (category.grade != CATEGORY_NOT_GRADED_STR && category) {
       grade +=
         category.grade *
-        parseInt(category.Weight?.substring(0, category.Weight.length - 2));
+        (category.name == "All"
+          ? 100
+          : parseInt(
+              category.Weight?.substring(0, category.Weight.length - 2)
+            ));
     }
   }
   grade *= weightScale;
@@ -94,30 +100,45 @@ function calculateCategoryDetails(period) {
   for (let assignment of period.Marks[0].Mark[0].Assignments[0].Assignment.filter(
     (e) => e.$.Points.includes("/")
   )) {
-    if (
-      parseInt(assignment.$.Score.split("")[0]) ==
-        NOT_GRADED_POINTS_EARNED_STR ||
-      parseInt(assignment.$.Score.split("")[2]) ==
-        NOT_GRADED_POINTS_POSSIBLE_STR
-    )
-      continue;
-    else {
-      let category = categories.find((i) => i.name == assignment.weight);
-      if (!category) {
-        // Handle the case where the assignment's category is not found
-        category = categories[0]; // Default to the first/only category
+    if (categories[0]?.name == "All") {
+      categories[0].pointsEarned += parseFloat(
+        assignment.$.Score.split(" ")[0]
+      );
+      categories[0].pointsPossible += parseFloat(
+        assignment.$.Score.split(" ")[3]
+      );
+    } else {
+      if (
+        parseFloat(assignment.$.Score.split(" ")[0]) ==
+          NOT_GRADED_POINTS_EARNED_STR ||
+        parseFloat(assignment.$.Score.split(" ")[3]) ==
+          NOT_GRADED_POINTS_POSSIBLE_STR
+      )
+        continue;
+      else {
+        let category = categories.find((i) => i.name == assignment.weight);
+        if (!category) {
+          // Handle the case where the assignment's category is not found
+          category = categories[0]; // Default to the first/only category
+        }
+        category.pointsEarned += parseFloat(assignment.$.Score.split(" ")[0]);
+        category.pointsPossible += parseFloat(assignment.$.Score.split(" ")[3]);
       }
-      category.pointsEarned += assignment.score;
-      category.pointsPossible += assignment.outOf;
     }
   }
-
   for (let category of categories) {
+    if (!category.pointsEarned || !category.pointsPossible) {
+      category.pointsEarned = parseFloat(category?.Points);
+      category.pointsPossible = parseFloat(category?.PointsPossible);
+    } else if (!category.Points || !category.PointsPossible) {
+      category.Points = category?.pointsEarned + "";
+      category.PointsPossible = category?.pointsPossible + "";
+    }
+    console.log(category);
     // Replace commas and convert to numbers
     let points = parseFloat(category.Points?.replace(/,/g, "")) || 0;
     let pointsPossible =
       parseFloat(category.PointsPossible?.replace(/,/g, "")) || 0;
-
     // Check for division by zero case
     if (pointsPossible === 0) {
       // Assign a default value or a specific indication for 0/0 case
@@ -125,6 +146,7 @@ function calculateCategoryDetails(period) {
     } else {
       category.grade = points / pointsPossible;
     }
+    console.log(category);
   }
   return categories;
 }

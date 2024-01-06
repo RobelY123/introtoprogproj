@@ -81,20 +81,11 @@ const Grade = ({ grades }) => {
               assignment.Points.split(" / ").map(Number);
             totalPoints += assignmentEarned;
             totalPointsPossible += assignmentPossible;
-            console.log(
-              `Assignment: ${assignment.Measure}, Earned: ${assignmentEarned}, Possible: ${assignmentPossible}`
-            );
           }
         });
 
-      console.log(
-        `Category Before: ${category.$.Type}, Points: ${category.$.Points}, PointsPossible: ${category.$.PointsPossible}`
-      );
       category.$.Points = totalPoints.toFixed(2);
       category.$.PointsPossible = totalPointsPossible.toFixed(2);
-      console.log(
-        `Category After: ${category.$.Type}, Points: ${category.$.Points}, PointsPossible: ${category.$.PointsPossible}`
-      );
     });
     console.log(weightCategories);
     // Update state with recalculated grade details
