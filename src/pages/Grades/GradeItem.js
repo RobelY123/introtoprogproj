@@ -2,42 +2,39 @@ import React from "react";
 import { Link as RouterLink } from "react-router-dom";
 import { Card, CardContent, Typography, Button } from "@mui/material";
 import { FaArrowCircleRight } from "react-icons/fa";
+import { convertToLetterGrade } from "../../util/utilFile";
+
+
 const GradeItem = ({ subject, grade, index }) => {
+  const letterGrade = convertToLetterGrade(grade);
+
   return (
     <Card
       sx={{
-        display: "flex",
-        justifyContent: "space-between",
         mb: 2,
         boxShadow: 3,
-        alignItems: "center",
+        display: "flex",
+        alignItems:'center',
       }}
     >
-      <CardContent
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          flex: 3,
-        }}
-      >
+      <CardContent sx={{ flex: 1 }}>
         <Typography variant="h6" component="h2">
           {subject}
         </Typography>
-        <Typography variant="body1">{grade}</Typography>
+        <Typography variant="body1">
+          Grade: {letterGrade} ({grade}%)
+        </Typography>
       </CardContent>
-      <div style={{ flex: 1 ,display:'flex',justifyContent:"flex-end"}}>
-        <Button
-          component={RouterLink}
-          to={`/grades/${index}`}
-          variant="contained"
-          color="primary"
-          endIcon={<FaArrowCircleRight />}
-          sx={{ m: 1, height: "50%", marginRight: "20px" }}
-        >
-          Details
-        </Button>
-      </div>
+      <Button
+        component={RouterLink}
+        to={`/grades/${index}`}
+        variant="contained"
+        color="primary"
+        endIcon={<FaArrowCircleRight />}
+        sx={{ mr:3 }}
+      >
+        Details
+      </Button>
     </Card>
   );
 };

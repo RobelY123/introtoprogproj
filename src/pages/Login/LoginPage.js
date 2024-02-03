@@ -16,16 +16,15 @@ export default function Login({ setGrades, setLoggedIn }) {
   const [usernameError, setUsernameError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [loginError, setLoginError] = useState("");
-
   const onSubmit = async (event) => {
     event.preventDefault();
     setLoading(true);
-
+  
     // Reset errors
     setUsernameError("");
     setPasswordError("");
     setLoginError("");
-
+  
     // Basic validation
     if (!username) {
       setUsernameError("Username is required");
@@ -37,42 +36,34 @@ export default function Login({ setGrades, setLoggedIn }) {
       setLoading(false);
       return;
     }
-
+  
     // Fetch API call
-    fetch("http://localhost:5000/api/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
-    })
-      .catch((error) => {
-        console.error(error);
-        setLoginError(error.message);
-        setLoading(false);
-      })
-      .then((response) => {
-        if (!response.ok) {
-          console.error("Login failed. Please check your credentials.");
-          setLoginError("Login failed. Please check your credentials.");
-          setLoading(false);
-        }
-        return response.json();
-      })
-      .then((data) => {
-        // Assume data.token contains the JWT
-        console.log(data);
-        if (data?.Gradebook) {
-          console.log(data);
-          // Store the token in local storage
-          localStorage.setItem("token", data.token);
-          // Update loggedIn state
-          setLoggedIn(true);
-          // Redirect or perform any other actions necessary after successful login
-          localStorage.setItem("grades", JSON.stringify(data.Gradebook));
-        } else {
-          // Handle the absence of a token in the response
-          throw new Error("No token received. Cannot authenticate.");
-        }
+    try {
+      const response = await fetch("http://localhost:5000/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
       });
+  
+      if (!response.ok) {
+        throw new Error("Login failed. Please check your credentials.");
+      }
+  
+      const data = await response.json();
+      console.log(data)
+      // Handle the response
+      if (data?.token) {
+        localStorage.setItem("token", data.token);
+        setLoggedIn(true);
+        localStorage.setItem("grades", JSON.stringify(data.Gradebook.Gradebook));
+      } else {
+        throw new Error("No token received. Cannot authenticate.");
+      }
+    } catch (error) {
+      setLoginError(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
   return (
     <Container component="main" maxWidth="xs">

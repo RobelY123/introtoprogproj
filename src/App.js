@@ -21,7 +21,10 @@ import { Fab } from "@mui/material";
 import ChatBubbleIcon from "@mui/icons-material/ChatBubble";
 import HelpPage from "./pages/Help/HelpPage";
 const App = () => {
-  const grades = JSON.parse(localStorage.getItem('grades'));
+  var grades = "STUDENTVUE DOWN";
+  if(localStorage.getItem('grades').toString()!="undefined"){
+    grades=JSON.parse(localStorage.getItem('grades'));
+  }
   const [chatOpen, setChatOpen] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
   React.useEffect(() => {
@@ -92,7 +95,7 @@ const App = () => {
                 path="/login"
                 element={
                   loggedIn ? (
-                    <Navigate to="/gpa" />
+                    <Navigate to="/" />
                   ) : (
                     <LoginPage
                       setLoggedIn={setLoggedIn}

@@ -23,8 +23,11 @@ import {
 } from "./gradeCalc.js";
 import { calculatePointsNeededDisplay } from "./fakeGradeCalc.js";
 import { Info } from "@mui/icons-material";
+import { convertToLetterGrade } from "../../util/utilFile.js";
+import { mockGrades } from "./mockGrades.js";
 
 const Grade = ({ grades }) => {
+  grades = typeof grades == "string" ? mockGrades : grades;
   const { gradeId } = useParams();
   const [gradeDetails, setGradeDetails] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -51,7 +54,6 @@ const Grade = ({ grades }) => {
       ...updatedAssignments[index],
       [field]: value,
     };
-    console.log(updatedAssignments);
     if (field != "Measure") {
       if (field.toLowerCase() == "score") {
         updatedAssignments[index] = {
@@ -67,9 +69,19 @@ const Grade = ({ grades }) => {
       // Update the assignments array in the grades data structure
       updatedGrades.Courses[0].Course[
         parseInt(gradeId, 10)
-      ].Marks[0].Mark[0].Assignments[0].Assignment = updatedAssignments.map(
-        (assignment) => ({ $: assignment })
-      );
+      ].Marks[0].Mark[0].Assignments[0].Assignment = updatedAssignments
+        .filter((e) => {
+          let points = e.Points.split("/").map((s) => s.trim()); // Trim whitespace
+          let assignmentEarned = parseInt(points[0]);
+          let assignmentPossible = parseInt(points[1]);
+          // Check for empty strings before conversion to Number
+          let isValidEarned = points[0] !== "" && !isNaN(assignmentEarned);
+          let isValidPossible =
+            points[1] !== "" &&
+            !isNaN(assignmentPossible) 
+          return isValidEarned && isValidPossible;
+        })
+        .map((assignment) => ({ $: assignment }));
 
       // Find the weight category
       let assignmentType = updatedAssignments[index].Type;
@@ -85,14 +97,20 @@ const Grade = ({ grades }) => {
         let totalPointsPossible = 0;
         updatedAssignments
           .filter((e) => {
-            let [assignmentEarned, assignmentPossible] =
-              e.Points.split(" / ").map(Number);
-            return assignmentEarned && assignmentPossible;
+            let points = e.Points.split("/").map((s) => s.trim()); // Trim whitespace
+            let assignmentEarned = parseInt(points[0]);
+            let assignmentPossible = parseInt(points[1]);
+            // Check for empty strings before conversion to Number
+            let isValidEarned = points[0] !== "" && !isNaN(assignmentEarned);
+            let isValidPossible =
+              points[1] !== "" &&
+              !isNaN(assignmentPossible) 
+            return isValidEarned && isValidPossible;
           })
           .forEach((assignment) => {
             if (assignment.Type === category?.$?.Type || !category?.$?.Type) {
               let [assignmentEarned, assignmentPossible] =
-                assignment.Points.split(" / ").map(Number);
+                assignment.Points.split("/").map(Number);
               totalPoints += assignmentEarned;
               totalPointsPossible += assignmentPossible;
             }
@@ -152,7 +170,12 @@ const Grade = ({ grades }) => {
     //   selectedAssignmentIndex
     // );
     var pointsNeeded;
-    console.log(assignment);
+    console.log(
+      gradeDetails,
+      selectedAssignmentIndex,
+      parseFloat(inputGrade) / 100,
+      period
+    );
     if (Number.isNaN(parseFloat(inputGrade))) pointsNeeded = "";
     else
       pointsNeeded = calculatePointsNeededDisplay(
@@ -224,6 +247,13 @@ const Grade = ({ grades }) => {
   return (
     <Box sx={{ p: 3, maxWidth: "100%", width: "auto", mx: "auto" }}>
       <Typography
+        variant="h2"
+        component="h1"
+        sx={{ textAlign: "center", mb: 2 }}
+      >
+        {convertToLetterGrade(grade)}
+      </Typography>
+      <Typography
         variant="h3"
         component="h1"
         gutterBottom
@@ -262,22 +292,21 @@ const Grade = ({ grades }) => {
                 value={
                   assignment.Points?.includes("Possible") || !assignment.Points
                     ? ""
-                    : parseFloat(
-                        assignment.Points?.replace(/,/g, "").split(" ")[0]
-                      )
+                    : assignment.Points?.replace(/,/g, "").split(" ")[0]
                 }
                 sx={{ flex: 1 }}
+                placeholder="Not Graded"
                 onChange={(e) => {
-                  const newValue = parseFloat(e.target.value);
-                  if (!isNaN(newValue)) {
-                    handleAssignmentChange(
-                      index,
-                      "Points",
-                      `${newValue.toFixed(2)} / ${
-                        assignment.Points?.replace(/,/g, "").split(" ")[2]
-                      }`
-                    );
-                  }
+                  const newValue = e.target.value;
+                  // if (!isNaN(parseFloat(e.target.value))) {
+                  handleAssignmentChange(
+                    index,
+                    "Points",
+                    `${newValue} / ${
+                      assignment.Points?.replace(/,/g, "").split(" ")[2]
+                    }`
+                  );
+                  // }
                 }}
               />
 
@@ -305,10 +334,15 @@ const Grade = ({ grades }) => {
                 size="small"
               />
               <Select
-                value={grades.Courses[0].Course[parseInt(gradeId, 10)]
-                  .Marks[0].Mark[0].GradeCalculationSummary[0]?assignment?.Type ||  grades.Courses[0].Course[
-                    parseInt(gradeId, 10)
-                  ].Marks[0].Mark[0].GradeCalculationSummary[0].AssignmentGradeCalc[0].$.Type:"e"}
+                value={
+                  grades.Courses[0].Course[parseInt(gradeId, 10)].Marks[0]
+                    .Mark[0].GradeCalculationSummary[0]
+                    ? assignment?.Type ||
+                      grades.Courses[0].Course[parseInt(gradeId, 10)].Marks[0]
+                        .Mark[0].GradeCalculationSummary[0]
+                        .AssignmentGradeCalc[0].$.Type
+                    : "e"
+                }
                 size="small"
                 sx={{
                   flex: 1,
@@ -341,7 +375,11 @@ const Grade = ({ grades }) => {
               </Select>
               <IconButton
                 sx={{ flex: 0.1, width: "45px" }}
-                onClick={() => openModal(index)}
+                onClick={() => {
+                  period.Marks[0].Mark[0].Assignments[0].Assignment.length > 0
+                    && openModal(index)
+                  
+                }}
               >
                 <Info />
               </IconButton>
@@ -350,7 +388,7 @@ const Grade = ({ grades }) => {
         </div>
       </Paper>
       <Modal
-        sx={{ display: "flex", justifyContent: "center" }}
+        sx={{ display: "flex", justifyContent: "center", zIndex: 10000000 }}
         open={modalOpen}
         onClose={closeModal}
       >

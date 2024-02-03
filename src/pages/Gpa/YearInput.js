@@ -29,6 +29,7 @@ const SemesterInput = ({
   handleRemoveCourse,
   letterGrade,
   setYears,
+  expandedYears,
 }) => {
   const matches2 = useMediaQuery("(max-width:550px)");
   const matches = useMediaQuery("(max-width:700px)");
@@ -37,6 +38,9 @@ const SemesterInput = ({
   //   { name: "Sample Class", grade: "4.0", weight: "Normal" },
   // ]);
   const [localCourses, setLocalCourses] = useState(courses);
+  useEffect(() => {
+    setLocalCourses(courses);
+  }, [courses]);
   const [gradeFormat, setGradeFormat] = useState("4.0");
   useEffect(() => {
     // Function to update only the courses for the specific year
@@ -76,10 +80,8 @@ const SemesterInput = ({
 
     updateCourse(index, "grade", formattedValue.toString());
   };
-  const getGradeDisplayValue = (course) => {
-    return letterGrade ? findClosestGrade(course.grade) : course.grade;
-  };
   const handleLetterGradeChange = (index, newLetterGrade) => {
+    console.log(newLetterGrade);
     updateCourse(index, "grade", newLetterGrade.toString());
   };
   const toggleGradeFormat = (event) => {
@@ -89,20 +91,22 @@ const SemesterInput = ({
       if (convertedGrade !== "") {
         // Ensure that grade is a number
         convertedGrade = parseFloat(convertedGrade);
-
+        console.log(newFormat);
+        console.log(convertedGrade);
         if (newFormat === "100") {
           // Converting from 4.0 scale to 100% scale
           convertedGrade *= 25;
         }
+        console.log(convertedGrade);
 
         // Rounding to two decimal places
         convertedGrade = parseFloat(convertedGrade.toFixed(2));
-
+        console.log(convertedGrade);
         // Limit the grade based on the new format
         convertedGrade =
           newFormat === "4.0"
             ? Math.min(convertedGrade, 4)
-            : Math.min(convertedGrade, 100);
+            : Math.min(convertedGrade, 100) / 25;
       }
 
       return { ...course, grade: convertedGrade.toString() };
@@ -112,9 +116,19 @@ const SemesterInput = ({
     setGradeFormat(newFormat);
   };
 
-  const addCourse = () => {
-    setLocalCourses([...courses, { name: "", grade: "", weight: "" }]);
+  const updateLocalAndPropagate = (updatedCourses) => {
+    setLocalCourses(updatedCourses); // Update local state
+    handleCourseChange(yearIndex, semesterIndex, updatedCourses); // Propagate changes to parent
   };
+
+  const addCourse = () => {
+    const newCourse = { name: "", grade: "", weight: "" };
+    const updatedCourses = [...localCourses, newCourse];
+    updateLocalAndPropagate(updatedCourses);
+  };
+
+  // Similar changes for updateCourse and handleGradeChange functions
+
   const letterGrades = {
     A: 4.0,
     "A-": 3.7,
@@ -129,10 +143,10 @@ const SemesterInput = ({
     F: 0.0,
   };
   const updateCourse = (index, field, value) => {
-    const updatedCourses = [...localCourses];
-    updatedCourses[index][field] = value;
-    setLocalCourses(updatedCourses);
-    handleCourseChange(yearIndex, semesterIndex, updatedCourses); // Propagate changes to parent component
+    const updatedCourses = localCourses.map((course, i) => 
+      i === index ? { ...course, [field]: value } : course
+    );
+    updateLocalAndPropagate(updatedCourses);
   };
   const [courseErrors, setCourseErrors] = useState(
     courses.map(() => ({ name: false, grade: false, weight: false }))
@@ -143,21 +157,6 @@ const SemesterInput = ({
       { name: false, grade: false, weight: false },
     ]);
   }, [courses]);
-  const validateInput = (course, index) => {
-    const isNameValid = course.name && course.name.trim() !== "";
-    const isGradeValid =
-      !isNaN(parseFloat(course.grade)) && course.grade.trim() !== "";
-    const isWeightValid = course.weight && course.weight.trim() !== "";
-
-    const newCourseErrors = [...courseErrors];
-    newCourseErrors[index] = {
-      name: !isNameValid,
-      grade: !isGradeValid,
-      weight: !isWeightValid,
-    };
-
-    setCourseErrors(newCourseErrors);
-  };
   const letterGradesToNumeric = {
     A: "4.0",
     "A-": 3.7,
@@ -184,33 +183,24 @@ const SemesterInput = ({
     { letter: "D", min: 1.0 },
     { letter: "F", min: 0.0 },
   ];
-  const getNumericGradeForSelect = (letterGrade) => {
-    return letterGradesToNumeric[letterGrade] || letterGrade;
-  };
   const findClosestLetterGrade = (numericGrade) => {
-    const grades = Object.entries(letterGradesToNumeric).sort(
-      (a, b) => b[1] - a[1]
-    );
-    for (const [letter, grade] of grades) {
-      if (numericGrade >= grade) {
-        return letter;
-      }
-    }
-    return "F"; // Default to F if no match is found
-  };
-  const findClosestGrade = (numericalGrade) => {
-    // Start with the lowest grade by default
-    let closestGrade = gradeMapping[gradeMapping.length - 1].letter;
+    // Assuming numericGrade is on a 4.0 scale
+    numericGrade = parseFloat(numericGrade);
 
+    // Start with the lowest grade by default
+    let closestGrade = "F";
+    let closestNumber = 1000;
     // Iterate over the grade mapping to find the closest grade
-    for (let i = 0; i < gradeMapping.length; i++) {
-      if (numericalGrade >= gradeMapping[i].min) {
-        closestGrade = gradeMapping[i].letter;
-        break;
+    gradeMapping.forEach((gradeInfo) => {
+      if (Math.abs(gradeInfo.min - numericGrade) <= closestNumber) {
+        closestNumber = Math.abs(gradeInfo.min - numericGrade);
+        closestGrade = gradeInfo.letter;
       }
-    }
+    });
+
     return closestGrade;
   };
+  console.log(localCourses);
   return (
     <Card
       variant="outlined"
@@ -278,6 +268,10 @@ const SemesterInput = ({
                   onChange={(e) => updateCourse(index, "name", e.target.value)}
                   sx={{ mr: !matches ? 1 : 0, flex: 2 }}
                 />
+                {console.log(course.grade)}
+                {console.log(
+                  letterGradesToNumeric[findClosestLetterGrade(course.grade)]
+                )}
                 {letterGrade ? (
                   <TextField
                     select
@@ -288,11 +282,15 @@ const SemesterInput = ({
                         : ""
                     }
                     sx={{ flex: 0.7 }}
-                    value={ letterGradesToNumeric[
-                      findClosestLetterGrade(course.grade)
-                    ].toString() === "0" ? "0.0" :  letterGradesToNumeric[
-                      findClosestLetterGrade(course.grade)
-                    ].toString()}
+                    value={
+                      letterGradesToNumeric[
+                        findClosestLetterGrade(course.grade)
+                      ].toString() === "0"
+                        ? "0.0"
+                        : letterGradesToNumeric[
+                            findClosestLetterGrade(course.grade)
+                          ].toString()
+                    }
                     onChange={(e) =>
                       handleLetterGradeChange(index, e.target.value)
                     }
@@ -317,7 +315,9 @@ const SemesterInput = ({
                         ? "Valid grade is required"
                         : ""
                     }
-                    value={course.grade}
+                    value={
+                      gradeFormat === "4.0" ? course.grade : course.grade * 25
+                    }
                     type="number"
                     InputLabelProps={{ shrink: true }}
                     onChange={(e) => handleGradeChange(index, e.target.value)}
@@ -393,7 +393,8 @@ const YearInput = ({
   expandedYears,
   setExpandedYears,
   years,
-  setYears,removeYear
+  setYears,
+  removeYear,
   // ... other props ...
 }) => {
   const matches = useMediaQuery("(max-width:1200px)");
@@ -405,9 +406,6 @@ const YearInput = ({
         return prev.filter((p) => p !== panel);
       }
     });
-  };
-  const handleRemoveYear = () => {
-    removeYear(yearIndex);
   };
   const [letter, setLetter] = useState(false);
   return (
@@ -441,7 +439,7 @@ const YearInput = ({
             />
             <Typography sx={{ fontSize: "0.8em" }}>Letter Grade</Typography>
           </div>
-          <IconButton onClick={handleRemoveYear}>
+          <IconButton onClick={removeYear}>
             <Delete /> {/* Assuming DeleteIcon is imported */}
           </IconButton>
         </div>
@@ -466,6 +464,7 @@ const YearInput = ({
                 handleRemoveCourse={handleRemoveCourse}
                 letterGrade={letter}
                 setYears={setYears}
+                expandedYears={expandedYears}
                 years={years}
                 // ... other props you need to pass down ...
               />

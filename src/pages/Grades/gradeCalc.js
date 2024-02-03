@@ -44,8 +44,6 @@ function calculateGradeDisplay(period) {
  */
 function calculateGrade(period) {
   let categoriesWithDetails = calculateCategoryDetails(period);
-  console.log(categoriesWithDetails)
-  console.log(period)
   let weightOfValidCategories = 0;
   for (let category of categoriesWithDetails) {
     if (category.grade != CATEGORY_NOT_GRADED_STR)
@@ -83,7 +81,6 @@ function calculateGrade(period) {
  * this will not mutate period, it will clone anything neccessary
  */
 function calculateCategoryDetails(period) {
-  console.log(period);
   var categories = _.cloneDeep(
     period.Marks[0].Mark[0].GradeCalculationSummary[0]?.AssignmentGradeCalc?.map(
       (e) => e.$
@@ -119,13 +116,17 @@ function calculateCategoryDetails(period) {
       )
         continue;
       else {
-        let category = categories.find((i) => i.name == assignment.weight);
+        let category = categories.find((i) => i.Type == assignment.$.Type);
+
         if (!category) {
           // Handle the case where the assignment's category is not found
           category = categories[0]; // Default to the first/only category
         }
-        category.pointsEarned += parseFloat(assignment.$.Score.split(" ")[0]);
-        category.pointsPossible += parseFloat(assignment.$.Score.split(" ")[3]);
+        categories.find((i) => i.Type == assignment.$.Type).pointsEarned +=
+          parseFloat(assignment.$.Score.split(" ")[0]);
+        categories.find((i) => i.Type == assignment.$.Type).pointsPossible +=
+          parseFloat(assignment.$.Score.split(" ")[3]);
+
       }
     }
   }
@@ -147,8 +148,7 @@ function calculateCategoryDetails(period) {
       category.grade = CATEGORY_NOT_GRADED_STR; // Assuming CATEGORY_NOT_GRADED_STR is a constant indicating ungraded category
     } else {
       category.grade = points / pointsPossible;
-    }
-  }
+    }}
   return categories;
 }
 function calculateCategoryDetailsDisplay(period) {
@@ -174,19 +174,25 @@ function calculateAssignmentWeight(period, assignmentInd, period2) {
 
   // Check if the assignment is not graded
   if (pointsPossible === NOT_GRADED_POINTS_POSSIBLE_STR) {
-    console.error("calculateAssignmentWeight received assignment with outOf = not graded");
+    console.error(
+      "calculateAssignmentWeight received assignment with outOf = not graded"
+    );
     return 1; // Return 1 to prevent division by zero in subsequent calculations
   }
 
   // Clone period2 to simulate different scores for the assignment
   let period2Clone = _.cloneDeep(period2);
-  
+
   // Simulate score of 0
-  period2Clone.Marks[0].Mark[0].Assignments[0].Assignment[assignmentInd].$.Score = `0 out of ${pointsPossible}`;
+  period2Clone.Marks[0].Mark[0].Assignments[0].Assignment[
+    assignmentInd
+  ].$.Score = `0 out of ${pointsPossible}`;
   let gradeIf0 = calculateGrade(period2Clone);
 
   // Simulate full score
-  period2Clone.Marks[0].Mark[0].Assignments[0].Assignment[assignmentInd].$.Score = `${pointsPossible} out of ${pointsPossible}`;
+  period2Clone.Marks[0].Mark[0].Assignments[0].Assignment[
+    assignmentInd
+  ].$.Score = `${pointsPossible} out of ${pointsPossible}`;
   let gradeIfFullScore = calculateGrade(period2Clone);
 
   // Calculate the weight of the assignment based on the change in grade
@@ -199,7 +205,9 @@ function calculateAssignmentWeight(period, assignmentInd, period2) {
 
   // If there is no change in grade, there might be a problem with the grade calculation logic
   if (weight === 0) {
-    console.error("No change in grade detected. There may be an issue with the grade calculation logic.");
+    console.error(
+      "No change in grade detected. There may be an issue with the grade calculation logic."
+    );
     return 0; // You may decide to return 0 or handle this case differently
   }
 
@@ -233,7 +241,12 @@ function calculateAssignmentGradeDisplay(assignment) {
   }
 }
 
-function calculatePointsNeededDisplay(period, assignmentInd, desiredGrade, period2) {
+function calculatePointsNeededDisplay(
+  period,
+  assignmentInd,
+  desiredGrade,
+  period2
+) {
   const assignment = period[assignmentInd];
   const pointsData = assignment.Points.split(" ");
   const pointsPossible = parseFloat(pointsData[2]);
@@ -248,21 +261,24 @@ function calculatePointsNeededDisplay(period, assignmentInd, desiredGrade, perio
 
   // Validate weight to prevent division by zero
   if (weight === 0 || isNaN(weight)) {
-    console.error('Weight is zero or NaN, cannot calculate points needed.');
+    console.error("Weight is zero or NaN, cannot calculate points needed.");
     return "Calculation error";
   }
 
   // Clone period2 and simulate a score of 0 for the assignment
   let period2Clone = _.cloneDeep(period2);
-  period2Clone.Marks[0].Mark[0].Assignments[0].Assignment[assignmentInd].$.Score =
-    `0 out of ${pointsPossible}`;
+  period2Clone.Marks[0].Mark[0].Assignments[0].Assignment[
+    assignmentInd
+  ].$.Score = `0 out of ${pointsPossible}`;
 
   // Calculate the grade if an assignment score was 0
   let gradeIf0 = calculateGrade(period2Clone);
 
   // Validate that desiredGrade is greater than gradeIf0
   if (desiredGrade < gradeIf0) {
-    console.error('Desired grade is less than grade if 0, cannot calculate points needed.');
+    console.error(
+      "Desired grade is less than grade if 0, cannot calculate points needed."
+    );
     return "Desired grade is not achievable";
   }
 
@@ -271,7 +287,7 @@ function calculatePointsNeededDisplay(period, assignmentInd, desiredGrade, perio
 
   // Final validation to check if pointsNeeded calculation is valid
   if (!isFinite(pointsNeeded)) {
-    console.error('Points needed calculation resulted in a non-finite number.');
+    console.error("Points needed calculation resulted in a non-finite number.");
     return "Calculation error";
   }
 

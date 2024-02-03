@@ -57,7 +57,7 @@ export default function Header({ loggedIn, logout }) {
   );
 
   return (
-    <AppBar position="sticky" color="inherit" sx={{ boxShadow: 1,background:'' }}>
+    <AppBar position="sticky" color="inherit" sx={{ boxShadow: 1,background:'',zIndex:10000000 }}>
       <Toolbar>
         {/* <Typography
           variant="h6"
@@ -97,6 +97,7 @@ export default function Header({ loggedIn, logout }) {
                 anchor={"right"}
                 open={drawerOpen}
                 onClose={toggleDrawer(false)}
+                style={{zIndex:100000000}}
               >
                 {list()}
               </Drawer>

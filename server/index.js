@@ -4,6 +4,7 @@ const session = require("express-session");
 const bodyParser = require("body-parser");
 const path = require("path");
 const app = express();
+const jwt = require("jsonwebtoken");
 const synergy = require("./synergy.js");
 const cors = require("cors");
 app.use(cors());
@@ -27,24 +28,34 @@ app.post("/login", (req, res) => {
 
 app.post("/api/login", async (req, res) => {
   try {
+    // Step 1: Verify user credentials
+    // For example, check if username and password are correct
+    // This is a simplified example; in a real application, you should check against your database
+    const userIsValid = req.body.username != "" && req.body.password != "";
+
+    if (!userIsValid) {
+      return res.status(401).send("Invalid credentials");
+    }
+
+    // Step 2: Generate Token
+    const token = jwt.sign(
+      { username: req.body.username },
+      process.env.SESSION_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    // Step 3: Fetch gradebook data
     const gradebook = await synergy.getGradebook(
       req.body.username,
       req.body.password,
       req.body.urlSubdomain
     );
-    console.log(typeof gradebook);
-    var invalid = {
-      RT_ERROR: {
-        $: { ERROR_MESSAGE: "Invalid user id or password (ID: F09A6)" },
-      },
-    };
-    if (gradebook["RT_ERROR"]) {
-      return res.status(401).send("Invalid credentials");
-    }
-    res.json(gradebook);
+
+    // Step 4: Send token and gradebook data in response
+    res.json({ token, Gradebook: gradebook });
   } catch (error) {
     console.log(error);
-    res.status(500).send("Error fetching gradebook");
+    res.status(500).send("Error processing request");
   }
 });
 // Example logout route
