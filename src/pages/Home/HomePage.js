@@ -16,7 +16,7 @@ const HomePage = () => {
           background: "linear-gradient(180deg, #4E6766 50%, #85b1af 90%)",
           color: "white", // All text in this section is white
           padding: "20px", // Added padding
-          height: "70vh",
+          height: "65vh",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
