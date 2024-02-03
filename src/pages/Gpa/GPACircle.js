@@ -16,6 +16,7 @@ const GPACircle = ({ value, text, label, expanded,size }) => {
         value={progress}
         size={size}
         thickness={5}
+        style = {{color: "#4e6766"}}
       />
       <Box
         top={0}

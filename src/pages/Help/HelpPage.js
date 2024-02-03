@@ -8,6 +8,7 @@ import {
   AccordionDetails,
   Button,
   Container,
+  Box
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
@@ -62,6 +63,36 @@ const HelpPage = () => {
       <Typography sx={{ mb: 3 }} variant="h3" fontWeight={600}>
         Help & Support
       </Typography>
+      <Box sx={{ minWidth: 275, maxWidth: 700, mb:2}}>
+        <Card
+          sx={{
+            padding: "35px",
+            margin: "30px 0",
+            background: "white", // Added gradient background
+            borderRadius: "12px", // Added border radius
+          }}
+        >
+          <Box sx={{ flex: 2,margin:"0 30px" }}>
+            <Typography
+              variant="h5"
+              gutterBottom
+              sx={{ fontWeight: "bold", color: "#4e6766" }}
+            >
+              {" "}
+              {/* Increased size and changed color */}
+              Grade and GPA Calculator
+            </Typography>
+            <Typography variant="h6" gutterBottom sx={{ color: "black" }}>
+              {" "}
+              {/* Changed color */}
+              Keep track of your course grades and calculate your GPA with ease.
+              Our intuitive interface allows you to input grades, and our system
+              automatically converts them into your GPA, be it numerical or
+              letter grades.
+            </Typography>
+          </Box>
+        </Card>
+      </Box>
       <Card sx={{ minWidth: 275, maxWidth: 700, mb: 2 }}>
         <CardContent>
           <Typography sx={{ mb: 1 }} variant="h5" component="h2">
@@ -93,7 +124,7 @@ const HelpPage = () => {
             variant="contained"
             color="primary"
             onClick={handleContactSupport}
-            style={{maxWidth:'200px'}}
+            style={{maxWidth:'200px', backgroundColor: "#4e6766"}}
           >
             Contact Support
           </Button>

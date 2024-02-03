@@ -136,11 +136,11 @@ export default function Header({ loggedIn, logout }) {
               </Button>
               <Button
                 variant="contained"
-                color="success"
+                color="primary"
                 component={RouterLink}
                 to="/login"
                 onClick={logout}
-                sx={{ margin: 1 }}
+                sx={{ margin: 1, backgroundColor: "#4E6766"}}
               >
                 {loggedIn ? "Logout" : "Login"}
               </Button>

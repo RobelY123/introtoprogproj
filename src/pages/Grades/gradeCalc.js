@@ -96,37 +96,38 @@ function calculateCategoryDetails(period) {
       category.pointsPossible = 0;
     }
   }
+  if(period.Marks[0].Mark[0].Assignments[0].Assignment?.length){
+    for (let assignment of period.Marks[0].Mark[0].Assignments[0].Assignment?.filter(
+      (e) => e.$.Points.includes("/")
+    )) {
+      if (categories[0]?.name == "All") {
+        categories[0].pointsEarned += parseFloat(
+          assignment.$.Score.split(" ")[0]
+        );
+        categories[0].pointsPossible += parseFloat(
+          assignment.$.Score.split(" ")[3]
+        );
+      } else {
+        if (
+          parseFloat(assignment.$.Score.split(" ")[0]) ==
+            NOT_GRADED_POINTS_EARNED_STR ||
+          parseFloat(assignment.$.Score.split(" ")[3]) ==
+            NOT_GRADED_POINTS_POSSIBLE_STR
+        )
+          continue;
+        else {
+          let category = categories.find((i) => i.Type == assignment.$.Type);
 
-  for (let assignment of period.Marks[0].Mark[0].Assignments[0].Assignment.filter(
-    (e) => e.$.Points.includes("/")
-  )) {
-    if (categories[0]?.name == "All") {
-      categories[0].pointsEarned += parseFloat(
-        assignment.$.Score.split(" ")[0]
-      );
-      categories[0].pointsPossible += parseFloat(
-        assignment.$.Score.split(" ")[3]
-      );
-    } else {
-      if (
-        parseFloat(assignment.$.Score.split(" ")[0]) ==
-          NOT_GRADED_POINTS_EARNED_STR ||
-        parseFloat(assignment.$.Score.split(" ")[3]) ==
-          NOT_GRADED_POINTS_POSSIBLE_STR
-      )
-        continue;
-      else {
-        let category = categories.find((i) => i.Type == assignment.$.Type);
+          if (!category) {
+            // Handle the case where the assignment's category is not found
+            category = categories[0]; // Default to the first/only category
+          }
+          categories.find((i) => i.Type == assignment.$.Type).pointsEarned +=
+            parseFloat(assignment.$.Score.split(" ")[0]);
+          categories.find((i) => i.Type == assignment.$.Type).pointsPossible +=
+            parseFloat(assignment.$.Score.split(" ")[3]);
 
-        if (!category) {
-          // Handle the case where the assignment's category is not found
-          category = categories[0]; // Default to the first/only category
         }
-        categories.find((i) => i.Type == assignment.$.Type).pointsEarned +=
-          parseFloat(assignment.$.Score.split(" ")[0]);
-        categories.find((i) => i.Type == assignment.$.Type).pointsPossible +=
-          parseFloat(assignment.$.Score.split(" ")[3]);
-
       }
     }
   }
