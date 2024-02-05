@@ -8,10 +8,10 @@ const jwt = require("jsonwebtoken");
 const synergy = require("./synergy.js");
 const cors = require("cors");
 app.use(cors());
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 8000;
 app.use(
   session({
-    secret: process.env.SESSION_SECRET, // Use an environment variable for the secret
+    secret: "secret",//process.env.SESSION_SECRET, // Use an environment variable for the secret
     cookie: {},
     resave: true,
     saveUninitialized: true,
@@ -40,7 +40,7 @@ app.post("/api/login", async (req, res) => {
     // Step 2: Generate Token
     const token = jwt.sign(
       { username: req.body.username },
-      process.env.SESSION_SECRET,
+        "secret",
       { expiresIn: "1h" }
     );
 
