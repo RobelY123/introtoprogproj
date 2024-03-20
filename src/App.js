@@ -22,7 +22,7 @@ import ChatBubbleIcon from "@mui/icons-material/ChatBubble";
 import HelpPage from "./pages/Help/HelpPage";
 const App = () => {
   var grades = "STUDENTVUE DOWN";
-  if(localStorage.getItem('grades').toString()!="undefined"){
+  if(localStorage.getItem('grades')?.toString()!="undefined"){
     grades=JSON.parse(localStorage.getItem('grades'));
   }
   const [chatOpen, setChatOpen] = useState(false);

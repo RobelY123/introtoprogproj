@@ -96,7 +96,7 @@ function calculateCategoryDetails(period) {
       category.pointsPossible = 0;
     }
   }
-
+if(period.Marks[0].Mark[0].Assignments[0].Assignment.length){
   for (let assignment of period.Marks[0].Mark[0].Assignments[0].Assignment.filter(
     (e) => e.$.Points.includes("/")
   )) {
@@ -150,7 +150,7 @@ function calculateCategoryDetails(period) {
       category.grade = points / pointsPossible;
     }}
   return categories;
-}
+}}
 function calculateCategoryDetailsDisplay(period) {
   let categoriesWithDetails = calculateCategoryDetails(period);
   for (let category of categoriesWithDetails) {
