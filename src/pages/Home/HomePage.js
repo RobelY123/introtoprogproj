@@ -1,5 +1,7 @@
 import React from "react";
 import { Box, Typography, Paper, Link, Divider, Card, Button } from "@mui/material";
+import { FaArrowCircleRight } from "react-icons/fa";
+import { Link as RouterLink } from "react-router-dom";
 import text from "../../images/text.svg";
 
 import textWhite from "../../images/textWhite.svg";
@@ -11,9 +13,14 @@ const HomePage = () => {
         sx={{
           fontWeight: "bold",
           // Gradient background from light green to dark green
-          background: "linear-gradient(180deg, #90ee90 30%, #006400 90%)",
+          background: "linear-gradient(180deg, #4E6766 50%, #85b1af 90%)",
           color: "white", // All text in this section is white
           padding: "20px", // Added padding
+          height: "65vh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
         }}
       >
         <div
@@ -43,42 +50,17 @@ const HomePage = () => {
           >
             Your comprehensive tool for modern managing of academic progress.
           </Typography>
+          <div>
+            <Button component={RouterLink} to="/gpa" variant="contained" endIcon={<FaArrowCircleRight />} style={{margin: "4px", background: "#4E6766",}}>GPA</Button>
+            <Button component={RouterLink} to="/grades" variant="contained" endIcon={<FaArrowCircleRight />} style={{margin: "4px", background: "#4E6766",}}>Grades</Button>
+          </div>
+          
         </div>
       </Box>
 
       <Divider variant="middle" />
 
       {/* Grades and GPA Section */}
-      <Box sx={{ p: 3 }}>
-        <Card
-          sx={{
-            padding: "35px",
-            margin: "30px 0",
-            background: "white", // Added gradient background
-            borderRadius: "12px", // Added border radius
-          }}
-        >
-          <Box sx={{ flex: 2,margin:"0 30px" }}>
-            <Typography
-              variant="h4"
-              gutterBottom
-              sx={{ fontWeight: "bold", color: "darkgreen" }}
-            >
-              {" "}
-              {/* Increased size and changed color */}
-              Grades and GPA Calculator
-            </Typography>
-            <Typography variant="h5" gutterBottom sx={{ color: "#90ee90" }}>
-              {" "}
-              {/* Changed color */}
-              Keep track of your course grades and calculate your GPA with ease.
-              Our intuitive interface allows you to input grades, and our system
-              automatically converts them into your GPA, be it numerical or
-              letter grades.
-            </Typography>
-          </Box>
-        </Card>
-      </Box>
       
       {/* Help Center Section */}
       <Box sx={{ p: 3 }}>
@@ -94,17 +76,17 @@ const HomePage = () => {
             margin:'0px 30px'
           }}
         >
-          <Typography variant="h5" gutterBottom>
+          <Typography variant="h5" gutterBottom style={{color: "#4E6766"}}>
             Help Center
           </Typography>
-          <Typography variant="body1" gutterBottom sx={{ color: "lightgreen" }}>
+          <Typography variant="body1" gutterBottom sx={{ color: "black" }}>
             {" "}
             {/* Changed color */}
             Got questions? Visit our Help Center for FAQs and resources. Can't
             find what you're looking for? Reach out directly to our support
             team.
           </Typography>
-          <Button href="/help" variant="contained" color="success">Go To help Page</Button>
+          <Button href="/help" variant="contained" endIcon={<FaArrowCircleRight />} style={{backgroundColor: "#4E6766"}}>Help</Button>
         </Paper>
       </Box>
     </Box>

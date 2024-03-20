@@ -201,7 +201,7 @@ const GPACalculator = () => {
           display: "flex",
         }}
       >
-        <Button variant="contained" onClick={addYear}>
+        <Button variant="contained" onClick={addYear} style={{backgroundColor: "#4e6766"}}>
           Add Year
         </Button>
       </Box>

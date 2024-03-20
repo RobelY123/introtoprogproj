@@ -31,7 +31,7 @@ const GradeItem = ({ subject, grade, index }) => {
         variant="contained"
         color="primary"
         endIcon={<FaArrowCircleRight />}
-        sx={{ mr:3 }}
+        sx={{ mr:3, backgroundColor:"#4e6766" }}
       >
         Details
       </Button>

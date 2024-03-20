@@ -130,7 +130,7 @@ export default function Login({ setGrades, setLoggedIn }) {
             fullWidth
             variant="contained"
             color="primary"
-            sx={{ mt: 3, mb: 2 }}
+            sx={{ mt: 3, mb: 2, backgroundColor: "#4e6766"}}
             disabled={loading}
           >
             {loading ? "Loading..." : "Login"}

@@ -272,7 +272,7 @@ const Grade = ({ grades }) => {
           variant="contained"
           color="primary"
           onClick={addAssignment}
-          sx={{ mb: 3 }}
+          sx={{ mb: 3, backgroundColor: "#4e6766"}}
         >
           Add Assignment
         </Button>
